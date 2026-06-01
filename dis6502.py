@@ -240,7 +240,7 @@ class Dis6502:
 	def dumpitout(self):
 		addr = 0
 		while addr < self.max_addr:
-			if self.flags[addr] & Flags.LOADED == 0:
+			if self.flags[addr] == 0:
 				addr += 1
 				continue
 			(len,text) = self.disassemble(addr)
