@@ -55,18 +55,33 @@ class Dis6502:
 		return self.ram[i+1] << 8 | self.ram[i]
 
 	def save_name(self, loc, name):
+		self.flags[loc] |= Flags.NAMED
 		self.names[loc] = name
 	def name(self, loc):
-		return self.names.get(loc, "L%04x" % (loc))
+		if self.flags[loc] & Flags.NAMED:
+			return self.names[loc]
+		if self.flags[loc] & Flags.SREF:
+			return "S%04x" % (loc)
+		if self.flags[loc] & Flags.JREF:
+			return "L%04x" % (loc)
+		if self.flags[loc] & Flags.DREF:
+			if loc < 0x100:
+				return "Z%02x" % (loc)
+			else:
+				return "D%04x" % (loc)
+		return None
+		#return "X%04x" % (loc)
 
 	def save_ref(self, refer, refee):
-		pass
+		if not refee in self.refs:
+			self.refs[refee] = []
+		self.refs[refee].append(refer)
 
 	def start_trace(self, loc, name):
 		print("Trace: %04x %s" % (loc, name))
-		self.flags[loc] |= Flags.NAMED | Flags.SREF
+		self.flags[loc] |= Flags.SREF
 		self.save_name(loc, name)
-		self.save_ref(0, loc)
+		self.refs[loc] = []
 		self.add_trace(loc)
 
 	def add_trace(self, addr):
@@ -89,6 +104,8 @@ class Dis6502:
 		# illegal instruction, do not process anything further
 		if ip.flags & OpcodeFlags.ILL:
 			return None
+
+		self.flags[addr] |= Flags.ISOP
 
 		if ip.length == 1:
 			operand = 0
@@ -142,21 +159,86 @@ class Dis6502:
 		while addr is not None:
 			addr = self.trace_one_inst(addr)
 
+	def instr_len(self, addr):
+		if self.flags[addr] & Flags.ISOP == 0:
+			return 1
+		ip = opcode_table[self.read8(addr)]
+		return ip.length
 
 	def print_bytes(self, addr):
 		if self.flags[addr] & Flags.ISOP == 0:
-			return ''
+			return (1,'')
 		ip = opcode_table[self.read8(addr)]
-		return self.ram[addr:addr+ip.length].tohex()
+		return (ip.length,self.ram[addr:addr+ip.length].hex())
 
+	def print_data(self, addr):
+		rc = "%02x" % (self.read8(addr))
+		for j in range(1,8):
+			if self.flags[addr+j] & (Flags.JREF | Flags.SREF | Flags.DREF | Flags.ISOP):
+				break
+			rc += ",%02x" % (self.read8(addr+j))
+		return (j,rc)
+	def print_instr(self, addr):
+		opcode = self.read8(addr)
+		ip = opcode_table[opcode]
+		rc = ip.name + "\t"
+		if ip.length == 1:
+			operand = 0
+		elif ip.length == 2:
+			operand = self.read8(addr+ 1)
+		elif ip.length == 3:
+			operand = self.read16(addr + 1)
+		addr += ip.length
+
+		if ip.flags & OpcodeFlags.REL:
+			if operand > 127:
+				operand = ~0xFF | operand
+			operand = operand + ip.length + addr - 1
+
+		if ip.flags & OpcodeFlags.IMM:
+			rc += "#$%02x" % (operand)
+		elif ip.flags & (OpcodeFlags.ACC | OpcodeFlags.IMP):
+			pass
+		elif ip.flags & (OpcodeFlags.REL | OpcodeFlags.ABS | OpcodeFlags.ZPG):
+			rc += "%s" % (self.name(operand))
+		elif ip.flags & (OpcodeFlags.IND | OpcodeFlags.ZPI):
+			rc += "(%s)" % (self.name(operand))
+		elif ip.flags & (OpcodeFlags.ABX | OpcodeFlags.ZPX):
+			rc += "%s,X" % (self.name(operand))
+		elif ip.flags & (OpcodeFlags.ABY | OpcodeFlags.ZPY):
+			rc += "%s,Y" % (self.name(operand))
+		elif ip.flags & (OpcodeFlags.INX):
+			rc += "(%s,X)" % (self.name(operand))
+		elif ip.flags & (OpcodeFlags.INY):
+			rc += "(%s),Y" % (self.name(operand))
+		else:
+			rc += '???'
+
+		return rc
+
+	def disassemble(self, addr):
+		rc = ''
+		name = self.name(addr)
+		if name:
+			rc += "\t%s:\n" % (name)
+
+		if self.flags[addr] & Flags.ISOP:
+			(len,hexdump) = self.print_bytes(addr)
+			rc += "%04x\t%-6s\t" % (addr, hexdump)
+			rc += self.print_instr(addr)
+		else:
+			(len,hexdump) = self.print_data(addr)
+			rc += "%04x\t%s" % (addr, hexdump)
+		return (len, rc)
 	def dumpitout(self):
 		addr = 0
 		while addr < self.max_addr:
 			if self.flags[addr] & Flags.LOADED == 0:
 				addr += 1
 				continue
-			print("%04x: %s %s" % (addr, str(self.flags[addr]), self.print_bytes(addr)))
-			addr += 1
+			(len,text) = self.disassemble(addr)
+			print(text)
+			addr += len
 			
 
 
