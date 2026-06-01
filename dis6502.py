@@ -15,6 +15,7 @@ class Flags(IntFlag):
 	TDONE = auto()		# has been traced
 	ISOP = auto()		# Is a valid instruction opcode
 	OFFSET = auto()		# should be printed as an offset
+	WORD = auto()		# Data is 16-bits wide
 
 # sign extend an 8-bit value
 def sign8(op):
@@ -81,13 +82,21 @@ class Dis6502:
 			return "X%04x" % (loc)
 		return None
 
+	def name_relative(self, loc):
+		for i in range(loc, loc-1024, -1):
+			if i < 0 or self.flags[i] == 0:
+				break
+			if self.flags[i] & (Flags.NAMED | Flags.SREF):
+				return "%s+%x" % (self.name(i), loc - i)
+		return "%04x" % (loc)
+
 	def save_ref(self, refer, refee):
 		if not refee in self.refs:
 			self.refs[refee] = []
 		self.refs[refee].append(refer)
 
 	def start_trace(self, loc, name):
-		print("Trace: %04x %s" % (loc, name))
+		print("Trace: %04x %s" % (loc, name), file=sys.stderr)
 		self.flags[loc] |= Flags.SREF
 		self.save_name(loc, name)
 		self.refs[loc] = []
@@ -179,15 +188,23 @@ class Dis6502:
 		return (ip.length,self.ram[addr:addr+ip.length].hex())
 
 	def print_data(self, addr):
-		rc = "%02x" % (self.read8(addr))
-		for j in range(1,8):
+		if self.flags[addr] & Flags.WORD:
+			step = 2
+			rc = ".word %04x" % (self.read16(addr))
+		else:
+			step = 1
+			rc = ".byte %02x" % (self.read8(addr))
+		for j in range(step,8,step):
 			if addr + j >= self.max_addr:
 				break
 			if self.flags[addr+j] & (Flags.JREF | Flags.SREF | Flags.DREF | Flags.ISOP):
 				break
-			rc += ",%02x" % (self.read8(addr+j))
+			if self.flags[addr] & Flags.WORD:
+				rc += ",%04x" % (self.read16(addr+j))
+			else:
+				rc += ",%02x" % (self.read8(addr+j))
 		return (j,rc)
-	def print_instr(self, addr):
+	def print_instr(self, addr, do_html = False):
 		opcode = self.read8(addr)
 		ip = opcode_table[opcode]
 		rc = ip.name + "\t"
@@ -202,22 +219,26 @@ class Dis6502:
 		if ip.flags & OpcodeFlags.REL:
 			operand = sign8(operand) + addr
 
+		name = self.name(operand, 1)
+		if do_html:
+			name = f"<a href=#{name}>{name}</a>"
+
 		if ip.flags & OpcodeFlags.IMM:
 			rc += "#$%02x" % (operand)
 		elif ip.flags & (OpcodeFlags.ACC | OpcodeFlags.IMP):
 			pass
 		elif ip.flags & (OpcodeFlags.REL | OpcodeFlags.ABS | OpcodeFlags.ZPG):
-			rc += "%s" % (self.name(operand, 1))
+			rc += "%s" % (name)
 		elif ip.flags & (OpcodeFlags.IND | OpcodeFlags.ZPI):
-			rc += "(%s)" % (self.name(operand, 1))
+			rc += "(%s)" % (name)
 		elif ip.flags & (OpcodeFlags.ABX | OpcodeFlags.ZPX):
-			rc += "%s,X" % (self.name(operand, 1))
+			rc += "%s,X" % (name)
 		elif ip.flags & (OpcodeFlags.ABY | OpcodeFlags.ZPY):
-			rc += "%s,Y" % (self.name(operand, 1))
+			rc += "%s,Y" % (name)
 		elif ip.flags & (OpcodeFlags.INX):
-			rc += "(%s,X)" % (self.name(operand, 1))
+			rc += "(%s,X)" % (name)
 		elif ip.flags & (OpcodeFlags.INY):
-			rc += "(%s),Y" % (self.name(operand, 1))
+			rc += "(%s),Y" % (name)
 		else:
 			rc += '???'
 
@@ -237,15 +258,47 @@ class Dis6502:
 			rc += self.print_instr(addr)
 		else:
 			(len,hexdump) = self.print_data(addr)
-			rc += "%04x\t%s" % (addr, hexdump)
+			rc += "%04x\t\t%s" % (addr, hexdump)
 		return (len, rc)
-	def dumpitout(self):
+
+	def disassemble_html(self, addr):
+		rc = ''
+		name = self.name(addr)
+		if name:
+			flags = self.flags[addr]
+			c = "func" if flags & Flags.SREF else "label"
+			rc += f"<div class={c} id={name}>{name}:</div>"
+			for ref in self.refs.get(addr,[]):
+				ref_addr = "%04x" % (ref)
+				ref_name = ref_addr
+
+				if flags & (Flags.SREF | Flags.DREF):
+					ref_name = self.name_relative(ref)
+				rc += f"<a class=xref href=#{ref_addr}>{ref_name}</a>"
+			rc += "<br/>\n"
+		rc += f"<div class=addr id=%04x>%04x</div>" % (addr, addr)
+		if self.flags[addr] & Flags.ISOP:
+			(len,hexdump) = self.print_bytes(addr)
+			instr = self.print_instr(addr, do_html=True)
+			rc += f"<div class=bytes>{hexdump}</div><div class=instr>{instr}</div>"
+		else:
+			(len,hexdump) = self.print_data(addr)
+			rc += f"<div class=bytes>{hexdump}</div>"
+
+		rc += "<br/>"
+
+		return (len, rc)
+			
+	def dumpitout(self, do_html=False):
 		addr = 0
 		while addr < self.max_addr:
 			if self.flags[addr] == 0:
 				addr += 1
 				continue
-			(len,text) = self.disassemble(addr)
+			if do_html:
+				(len,text) = self.disassemble_html(addr)
+			else:
+				(len,text) = self.disassemble(addr)
 			print(text)
 			addr += len
 
@@ -259,18 +312,61 @@ class Dis6502:
 				label = words[1]
 				self.save_name(address, label)
 
+css = """<style>
+html {
+	background-color: #000000;
+}
+.addr, .bytes, .data, .instr, .label, .func, .hexdump, .xref {
+	color: #00ff00;
+	font-family: monospace, monospace;
+	font-size: 20px;
+	display: inline-block;
+}
+.addr { width: 4em; }
+.bytes { width: 12em; }
+.label, .func { padding-left: 12em; }
+.func { padding-top: 2em; font-weight: bolder; }
+.xref { padding-left: 1em; padding-right: 1em; color: #008000;  }
+.data { width: 32em; }
+a {
+	color: #00ff00;
+	text-decoration: none;
+}
+a:hover {
+	color: #ffff00;
+}
+:target {
+	color: #ffff00;
+}
+</style>
+"""
+
 
 if __name__ == "__main__":
 	base = 0x4800
 	vector = 0x8000
+	do_html = True
 
 	filename = sys.argv[1]
 	dis = Dis6502()
 	dis.load_binary(filename, base, vector)
 
+	dis.flags[0x632a] |= Flags.WORD
+
 	if len(sys.argv) > 2:
 		dis.load_symbols(sys.argv[2])
 	dis.trace_all()
-	dis.dumpitout()
+
+	if do_html:
+		print(f"""doctype html>
+<html><head>
+<meta charset=utf-8>
+<title>{filename} disassembly</title>
+</head>
+{css}
+<body>
+""")
+
+	dis.dumpitout(do_html=do_html)
 
 
