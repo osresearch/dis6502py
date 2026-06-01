@@ -221,7 +221,7 @@ class Dis6502:
 
 		name = self.name(operand, 1)
 		if do_html:
-			name = f"<a href=#{name}>{name}</a>"
+			name = f"<a class=link href=#{name}>{name}</a>"
 
 		if ip.flags & OpcodeFlags.IMM:
 			rc += "#$%02x" % (operand)
@@ -328,8 +328,10 @@ html {
 .func { padding-top: 2em; font-weight: bolder; }
 .xref { padding-left: 1em; padding-right: 1em; color: #008000;  }
 .data { width: 32em; }
+.link { 
+	color: #ff00ff;
+}
 a {
-	color: #00ff00;
 	text-decoration: none;
 }
 a:hover {
@@ -369,4 +371,23 @@ if __name__ == "__main__":
 
 	dis.dumpitout(do_html=do_html)
 
-
+	if do_html:
+		print("""
+<script>
+for(var el of document.getElementsByClassName("link"))
+{
+	el.addEventListener("mouseenter", (event) => {
+		dest = document.getElementById(event.target.innerHTML)
+		console.log("focus", event.target.innerHTML, dest)
+		if (dest)
+			dest.style.background = "pink";
+	})
+	el.addEventListener("mouseleave", (event) => {
+		dest = document.getElementById(event.target.innerHTML)
+		console.log("unfocus", event.target.innerHTML, dest)
+		if (dest)
+			dest.style.background = "";
+	})
+}
+</script>
+""")
