@@ -16,6 +16,10 @@ class Flags(IntFlag):
 	ISOP = auto()		# Is a valid instruction opcode
 	OFFSET = auto()		# should be printed as an offset
 
+# sign extend an 8-bit value
+def sign8(op):
+	return (op & 0x7F) - (op & 0x80)
+
 class Dis6502:
 	max_addr = 0x10000
 
@@ -55,9 +59,12 @@ class Dis6502:
 		return self.ram[i+1] << 8 | self.ram[i]
 
 	def save_name(self, loc, name):
+		if loc in self.names:
+			return
 		self.flags[loc] |= Flags.NAMED
 		self.names[loc] = name
-	def name(self, loc):
+
+	def name(self, loc, use_default=False):
 		if self.flags[loc] & Flags.NAMED:
 			return self.names[loc]
 		if self.flags[loc] & Flags.SREF:
@@ -69,8 +76,10 @@ class Dis6502:
 				return "Z%02x" % (loc)
 			else:
 				return "D%04x" % (loc)
+
+		if use_default:
+			return "X%04x" % (loc)
 		return None
-		#return "X%04x" % (loc)
 
 	def save_ref(self, refer, refee):
 		if not refee in self.refs:
@@ -140,9 +149,7 @@ class Dis6502:
 			self.trace_queue.append(operand)
 		elif ip.flags & OpcodeFlags.FORK:
 			if ip.flags & OpcodeFlags.REL:
-				if operand > 127:
-					operand = ~0xff | operand
-				operand = operand + addr
+				operand = sign8(operand) + addr
 				self.flags[operand] |= Flags.JREF
 			else:
 				self.flags[operand] |= Flags.SREF
@@ -191,26 +198,24 @@ class Dis6502:
 		addr += ip.length
 
 		if ip.flags & OpcodeFlags.REL:
-			if operand > 127:
-				operand = ~0xFF | operand
-			operand = operand + ip.length + addr - 1
+			operand = sign8(operand) + addr
 
 		if ip.flags & OpcodeFlags.IMM:
 			rc += "#$%02x" % (operand)
 		elif ip.flags & (OpcodeFlags.ACC | OpcodeFlags.IMP):
 			pass
 		elif ip.flags & (OpcodeFlags.REL | OpcodeFlags.ABS | OpcodeFlags.ZPG):
-			rc += "%s" % (self.name(operand))
+			rc += "%s" % (self.name(operand, 1))
 		elif ip.flags & (OpcodeFlags.IND | OpcodeFlags.ZPI):
-			rc += "(%s)" % (self.name(operand))
+			rc += "(%s)" % (self.name(operand, 1))
 		elif ip.flags & (OpcodeFlags.ABX | OpcodeFlags.ZPX):
-			rc += "%s,X" % (self.name(operand))
+			rc += "%s,X" % (self.name(operand, 1))
 		elif ip.flags & (OpcodeFlags.ABY | OpcodeFlags.ZPY):
-			rc += "%s,Y" % (self.name(operand))
+			rc += "%s,Y" % (self.name(operand, 1))
 		elif ip.flags & (OpcodeFlags.INX):
-			rc += "(%s,X)" % (self.name(operand))
+			rc += "(%s,X)" % (self.name(operand, 1))
 		elif ip.flags & (OpcodeFlags.INY):
-			rc += "(%s),Y" % (self.name(operand))
+			rc += "(%s),Y" % (self.name(operand, 1))
 		else:
 			rc += '???'
 
@@ -220,6 +225,8 @@ class Dis6502:
 		rc = ''
 		name = self.name(addr)
 		if name:
+			if self.flags[addr] & Flags.SREF:
+				rc += "\n"
 			rc += "\t%s:\n" % (name)
 
 		if self.flags[addr] & Flags.ISOP:
@@ -239,8 +246,16 @@ class Dis6502:
 			(len,text) = self.disassemble(addr)
 			print(text)
 			addr += len
-			
 
+
+	def load_symbols(self, filename):
+		with open(filename, "r") as f:
+			while (line := f.readline()):
+				# address label optional-comment
+				words = line.split(maxsplit=2)
+				address = int(words[0], 16)
+				label = words[1]
+				self.save_name(address, label)
 
 
 if __name__ == "__main__":
@@ -250,6 +265,9 @@ if __name__ == "__main__":
 	filename = sys.argv[1]
 	dis = Dis6502()
 	dis.load_binary(filename, base, vector)
+
+	if len(sys.argv) > 2:
+		dis.load_symbols(sys.argv[2])
 	dis.trace_all()
 	dis.dumpitout()
 
