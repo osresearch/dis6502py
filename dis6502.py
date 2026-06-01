@@ -181,6 +181,8 @@ class Dis6502:
 	def print_data(self, addr):
 		rc = "%02x" % (self.read8(addr))
 		for j in range(1,8):
+			if addr + j >= self.max_addr:
+				break
 			if self.flags[addr+j] & (Flags.JREF | Flags.SREF | Flags.DREF | Flags.ISOP):
 				break
 			rc += ",%02x" % (self.read8(addr+j))
