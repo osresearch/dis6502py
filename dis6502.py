@@ -54,6 +54,10 @@ class Dis6502:
 		and i < self.max_addr - 1 \
 		and self.flags[i] & Flags.LOADED \
 		and self.flags[i+1] & Flags.LOADED
+	def is_op(self, i):
+		return 0 <= i \
+		and i < self.max_addr - 1 \
+		and (self.flags[i] & Flags.ISOP) != 0
 
 	def read8(self, i):
 		return self.ram[i]
@@ -177,13 +181,13 @@ class Dis6502:
 			addr = self.trace_one_inst(addr)
 
 	def instr_len(self, addr):
-		if self.flags[addr] & Flags.ISOP == 0:
+		if not self.is_op(addr):
 			return 1
 		ip = opcode_table[self.read8(addr)]
 		return ip.length
 
 	def print_bytes(self, addr):
-		if self.flags[addr] & Flags.ISOP == 0:
+		if not self.is_op(addr):
 			return (1,'')
 		ip = opcode_table[self.read8(addr)]
 		return (ip.length,self.ram[addr:addr+ip.length].hex())
@@ -264,7 +268,7 @@ class Dis6502:
 				rc += "\n"
 			rc += "\t%s:\n" % (name)
 
-		if self.flags[addr] & Flags.ISOP:
+		if self.is_op(addr):
 			(len,hexdump) = self.print_bytes(addr)
 			rc += "%04x\t%-6s\t" % (addr, hexdump)
 			rc += self.print_instr(addr)
@@ -290,7 +294,7 @@ class Dis6502:
 			rc += "<br/>\n"
 		#rc += f"<span class=anchor id=%04x></span>" % (addr)
 		rc += "<div class=addr>%04x</div>" % (addr)
-		if self.flags[addr] & Flags.ISOP:
+		if self.is_op(addr):
 			(len,hexdump) = self.print_bytes(addr)
 			instr = self.print_instr(addr, do_html=True)
 			rc += f"<div class=bytes>{hexdump}</div><div class=instr>{instr}</div>"
