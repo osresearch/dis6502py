@@ -15,7 +15,8 @@ class Flags(IntFlag):
 	TDONE = auto()		# has been traced
 	ISOP = auto()		# Is a valid instruction opcode
 	OFFSET = auto()		# should be printed as an offset
-	WORD = auto()		# Data is 16-bits wide
+	WORD_LOW = auto()	# Data is 16-bits wide, low byte
+	WORD_HIGH = auto()	# Data is 16-bits wide, high byte
 
 # sign extend an 8-bit value
 def sign8(op):
@@ -193,7 +194,7 @@ class Dis6502:
 		return (ip.length,self.ram[addr:addr+ip.length].hex())
 
 	def print_data(self, addr):
-		if self.flags[addr] & Flags.WORD:
+		if self.flags[addr] & Flags.WORD_LOW:
 			step = 2
 			rc = ".word %04x" % (self.read16(addr))
 		else:
@@ -202,9 +203,9 @@ class Dis6502:
 		for j in range(step,8,step):
 			if addr + j >= self.max_addr:
 				break
-			if self.flags[addr+j] & (Flags.JREF | Flags.SREF | Flags.DREF | Flags.ISOP):
+			if self.flags[addr+j] & (Flags.JREF | Flags.SREF | Flags.DREF | Flags.ISOP | Flags.NAMED):
 				break
-			if self.flags[addr] & Flags.WORD:
+			if self.flags[addr] & Flags.WORD_LOW:
 				rc += ",%04x" % (self.read16(addr+j))
 			else:
 				rc += ",%02x" % (self.read8(addr+j))
@@ -317,12 +318,26 @@ class Dis6502:
 
 	def load_symbols(self, filename):
 		with open(filename, "r") as f:
+			line_num = 0
 			while (line := f.readline()):
-				# address label optional-comment
-				words = line.split(maxsplit=2)
-				address = int(words[0], 16)
+				# address label optional-type
+				line_num += 1
+				words = line.rstrip().split(maxsplit=2)
+				addr = int(words[0], 16)
 				label = words[1]
-				self.save_name(address, label)
+				self.save_name(addr, label)
+
+				if len(words) <= 2:
+					pass
+				elif words[2] == "func":
+					self.flags[addr] |= Flags.SREF
+				elif words[2] == "word":
+					self.flags[addr] |= Flags.WORD_LOW
+					self.flags[addr+1] |= Flags.WORD_HIGH
+					self.save_name(addr + 1, label + "_high")
+				else:
+					raise RuntimeError(f"{filename}:{line_num}: Unknown type {words[2]}")
+					
 
 if __name__ == "__main__":
 	base = 0x4800
@@ -332,8 +347,6 @@ if __name__ == "__main__":
 	dis = Dis6502()
 	dis.load_binary(filename, base)
 	dis.vector(vector)
-
-	dis.flags[0x632a] |= Flags.WORD
 
 	if len(sys.argv) > 2:
 		dis.load_symbols(sys.argv[2])

@@ -81,7 +81,7 @@ class Annotator:
 		elif self.mode == "func": #re.match(r"[0-9a-fA-F]+", words[0]):
 			self.disassemble(line) #int(words[0],16), words[1:])
 		else:
-			print(line, end='')
+			print(line)
 
 
 	def start_func(self, name):

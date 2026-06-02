@@ -11,16 +11,24 @@ html {
 .bytes { width: 6em; }
 .instr { width: 20em; }
 .label, .func { padding-left: 8em; }
-.func { padding-top: 2em; font-weight: bolder; }
+.func { padding-top: 1em; font-weight: bolder; }
 .data { width: 32em; }
-.link { color: #80ff00; }
+.link { color: #f0ff00; }
 .xref { padding-left: 1em; padding-right: 1em; color: #008000;  }
 a { text-decoration: none; }
+a:visited { color: #c0c000; }
 a:hover { color: #ffff00; }
-:target { background-color: #303000; }
+:target {
+	background-color: #303000;
+	/* transition: background-color 5s linear; */
+}
 .highlight { color: #ff00ff !important; }
 .highlight  .link { color: #ff00ff; }
 .highlight  .xref { color: #ff00ff; }
+
+pre {
+	padding-left: 4em;
+}
 
 .anchor{
 	display: block;
