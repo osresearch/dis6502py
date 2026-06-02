@@ -2,15 +2,7 @@
 <h2 id=section_rotation>Ship rotation</h2>
 
 The first function we're going to look at to keep things simple is the one
-that reads the player's rotation buttons.  There are five buttons on the controls,
-Rotate Right, Rotate Left, Abort, Start and Select.
-The <a href="https://lakeside-arcade.com/2026/03/07/lunar-lander-pcb-repair-logs/">Lakeside Arcade - Lunar Lander PCB Repair Logs</a>
-has a helpful excerpt from the service manual showing the memory map for the arcade console:
-
-<img src="images/llander-buttons.png" alt="Memory map for the Lunar Lander 6502"/>
-
-The buttons are memory mapped into the 6502's address space and set bit 7 in the byte
-when they are pressed.
+that reads the player's rotation buttons.
 
 .func IO_read_rotate_buttons
 6404  a200    LDX #$00                   ; X = 0
@@ -24,9 +16,6 @@ when they are pressed.
 .label not_left
 6412  8a      TXA                        ; A = X
 6413  60      RTS                        ; Return 0 if neither or both buttons are pessed, -1 for right, +1 for left
-
-.byte 2406 IO_in1_yaw_right		; Memory mapped active high button for rotate to the right
-.byte 2407 IO_in1_yaw_left		; Memory mapped active high button for rotate to the left
 
 .text
 This could also be rewritten into something like C:

@@ -102,9 +102,11 @@
 00c1 state_c1
 00c2 state_c2
 2000 IO_in0
-2400 IO_in1
-2403 IO_in1_coin3
-2404 IO_in1_select_game
+2400 IO_in1_start
+2401 IO_in1_coin3
+2402 IO_in1_coin2
+2403 IO_in1_coin1
+2404 IO_in1_select
 2405 IO_in1_abort
 2406 IO_in1_yaw_right
 2407 IO_in1_yaw_left
@@ -114,7 +116,7 @@
 2803 IO_dsw1_RightCoin
 2c00 IO_thrust
 3000 IO_VecGenGo
-3200 IO_outlatch
+3200 IO_out_latch
 3400 IO_watchdog
 3c00 IO_sounds
 3e00 IO_snd_reset

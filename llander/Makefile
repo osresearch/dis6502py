@@ -3,6 +3,7 @@ all: index.html
 index.html: FORCE
 	../annotate6502.py > $@ \
 		header.dis \
+		buttons.dis \
 		rotation.dis \
 		zeropage.dis \
 		footer.dis \

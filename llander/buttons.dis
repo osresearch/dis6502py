@@ -1,0 +1,32 @@
+.text
+<h2 id="section-buttons">Cabinet buttons and lamps</h2>
+
+The <a href="https://lakeside-arcade.com/2026/03/07/lunar-lander-pcb-repair-logs/">Lakeside Arcade - Lunar Lander PCB Repair Logs</a>
+has a helpful excerpt from the service manual showing the memory map for the arcade console:
+
+<img src="images/llander-buttons.png" alt="Memory map for the Lunar Lander 6502"/>
+
+There are five buttons on the controls, Rotate Right, Rotate Left, Abort, Start and Select.
+These are all memory mapped into the 6502's address space and set bit 7 in the byte
+when they are pressed.
+
+.byte 2400 IO_in1_start			; Memory mapped active high button for start game
+.byte 2404 IO_in1_select		; Memory mapped active high button for select difficulty level
+.byte 2405 IO_in1_abort			; Memory mapped active high button for abort the mission
+.byte 2406 IO_in1_yaw_right		; Memory mapped active high button for rotate to the right
+.byte 2407 IO_in1_yaw_left		; Memory mapped active high button for rotate to the left
+
+.text
+There are also three coin slots mapped into the same memory region:
+
+.byte 2401 IO_in1_coin3			; Memory mapped active high coin slot
+.byte 2402 IO_in1_coin2			; Memory mapped active high coin slot
+.byte 2403 IO_in1_coin1			; Memory mapped active high coin slot
+
+.text
+The lamps and sounds are also memory mapper peripherals.  Eight output pins are mapped to the
+one address.  The system caches the last value to avoid read-modify-write problems with this location.
+
+.byte 3200 IO_out_latch			; Lamps 0 - 3, Start, Select, Coin enable
+
+
