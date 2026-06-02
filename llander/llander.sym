@@ -1,0 +1,367 @@
+0000 state_00
+0001 actual_thrust_maybe
+0002 ship_angle_modulo
+0003 yaw_rate
+0005 yaw_rate_maybe
+0007 ship_pos
+000b thrust_mode_maybe
+000d vec_letter_ptr_maybe
+000f score_dec_maybe
+0019 ThisDebrisX
+001b ThisDebrisY
+0021 language_setting
+0022 game_state_flags
+0023 mission_difficulty
+0024 mission_debounce
+0025 start_game_debounce
+0026 diag_step_debounce
+0027 VecRamPtr
+0029 vecdata_ptr_start
+002b current_character_ptr
+002d VecRamPtr_copy
+002f VecRamPtr_copy2
+0031 vec_letter_ptr_something
+0033 nmi_counter_4
+0034 nmi_counter_next
+0037 GenByte_0037
+0038 GenByte_0038
+0039 GenByte_0039
+003a GenByte_003a
+003b GenByte_003b
+003c IO_outlatch_last_set
+003d GenByte_003c
+003e GenByte_003e
+003f GenByte_003f
+0040 GenByte_0040
+0041 GenByte_0041
+0042 multiply_42
+0043 multiply_43
+0044 multiply_44
+0045 multiply_45
+0046 ship_accel_sign
+0048 delta2
+004a delta1
+004c delta2_sign
+004d delta1_sign
+004e drawing_scale
+004f score_dec_something1
+0051 score_dec_something2
+0055 ship_enable_x
+0056 abort_triggered
+0057 ship_enable_y
+0058 ship_accel
+005a ship_vel_sign
+005d ship_v_or_h_vel_maybe
+005e ship_vel
+0062 touchdown_velocities_maybe
+0063 gravity
+0064 VecPtr
+0066 ship_angle word
+0067 ship_angle_high
+0068 abort_debounce
+0073 dvg_delay_maybe
+0074 nmi_counter_74
+0075 divisor
+0076 divisor2
+0077 remainder
+0078 dividend_working
+0082 thrust_delta_last_raw
+0083 thrust_high
+0084 thrust_delta
+0085 thrust_something_counter
+0086 FrameCounter
+0087 nmi_counter_250
+0088 IO_outlatch_cache
+0089 IO_audiolatch_cache
+008a delay_6
+008b vec_src_offst_maybe
+008c vecgen_offset_something
+008d time_in_seconds
+008e landing_bonus
+008f GenByte08f
+0090 fuel_lost_timeout
+0091 random_message
+0092 bcd_output
+0095 fuel_lost_bcd
+0097 fuel_state
+0098 fuel_per_coin
+0099 credits_per_coin
+009c time_bcd_maybe
+009e score_bcd_maybe
+00a2 score_bcd_something_else
+00a4 score_bcd
+00a9 bcd_score_maybe2
+00ac fuel_bcd
+00b0 math_something
+00b2 ValidCoins
+00b3 WaitCoinTimers
+00b4 SlamTimer
+00b6 NumCredits_maybe
+00b7 CoinDropTimers
+00ba NmiCounter
+00c1 state_c1
+00c2 state_c2
+2000 IO_in0
+2400 IO_in1
+2403 IO_in1_coin3
+2404 IO_in1_select_game
+2405 IO_in1_abort
+2406 IO_in1_yaw_right
+2407 IO_in1_yaw_left
+2800 IO_dsw1_0
+2801 IO_dsw1_1
+2802 IO_dsw1_2
+2803 IO_dsw1_RightCoin
+2c00 IO_thrust
+3000 IO_VecGenGo
+3200 IO_outlatch
+3400 IO_watchdog
+3c00 IO_sounds
+3e00 IO_snd_reset
+4000 IO_vecgen_ram
+4bbc zoomed_in_settings_4bbc
+4e9e debris_subroutines_4e9e
+4eec debris0_anim
+4ef8 debris1_anim
+4f04 debris2_anim
+4f10 debris3_anim
+51ba vector_table_of_some_sort
+51e2 vectors_not_zoomed_51e2
+52fe vec_subroutines_zoomed_52fe
+53ee vec_subroutnies_53ee
+5416 vec_code_5416
+553c setup_time_display
+55ae font_start
+55be font_a
+5668 font_l
+5702 font_x
+570c font_y
+571a font_z
+5726 font_space
+572a font_1
+5732 font_2
+5742 font_3
+5794 font_9
+57a2 CharPtrTbl
+5800 string_table_lang_offset
+5804 string_table_french
+5834 string_table_spanish
+5864 string_table_german
+5fa1 language_offset_maybe
+5fa4 string_table_fixup_something
+6001 InitGame
+6008 GameLoop
+6062 GameLoop_maybe
+61c0 call_init_game_thunk
+61c3 abort_button_handler
+61d8 game_next_level_setup
+6213 ResetGameState func
+6235 game_state_reinit_maybe func
+6288 bzero_ship_state
+629e return_x_plus_1_or_10 func
+62a7 array_11_11_22_11
+62ab mission_button_handler func
+62bc ship_reset_saved_angle func
+62be ship_reset func
+62dd mission_debounce_reset
+62e2 mission_lamps
+62e6 coin_inserted func
+6309 fuel_add_credit func
+6313 fuel_increase_limit_9999 func
+632a fuel_per_coin_bcd_table
+633c ship_command_yaw func
+6389 yawing_left
+63ab no_yaw_command
+63d3 rts_63d3 func
+63d4 ship_command_yaw_easy func
+63f6 cancel_rotation
+63fe yaw_drain_fuel
+6404 IO_read_rotate_buttons func
+640c not_right
+6412 not_left
+6414 thrust_smoothing_maybe func
+6461 fuel_drain_wrapper
+6463 fuel_drain func
+64aa abort_procedure_update func
+64ff str_1100
+6503 str_1300
+6507 svec_right_shit
+6509 ship_vel_decay func
+652d dvg_wait_done func
+6539 vec_draw_51ba_table func
+6567 vec_draw_subroutines func
+6592 vecgen_copy_10 func
+659e vec_clear_genbytes_37_3a func
+65ad draw_ship_prep_maybe func
+6637 DrawShip func
+6639 NextShipOpCode_maybe
+664c DrawShipVect
+665f DrawShipSVEC
+666e finish_ship_drawing_maybe func
+6684 shuffle_7_to_9 func
+669d debris_update func
+6709 debris_position_update_2 func
+6728 debris_position_update func
+6771 debris_vectors
+6772 debris_array_maybe
+6795 draw_even_more_stuff func
+67e3 FUN_67e3 func
+67eb DrawNumber_2 func
+67ed DrawNumber_and_copy func
+67f4 DrawNumber_3 func
+67f9 TwosComplement func
+67ff draw_bonus_maybe func
+6876 vec_compute_offset_maybe func
+687e draw_push_start_screen func
+689e draw_out_of_fuel_screen func
+68d6 draw_level_over_screen func
+692b string_table
+696d string_table_fixup_something_else
+6979 str_LOW_ON_FUEL
+6984 str_OUT_OF_FUEL
+698f str_LOST
+6993 str_FUEL_UNITS
+699f str_INSERT_COINS
+69ab str_PUSH_START
+69b5 str_SELECT_OPTION
+69c2 str_POINTS
+69c9 str_450
+69cc str_600
+69cf str_750
+69d2 str_900
+69d5 str_1550
+69d9 str_1800
+69dd str_PER_COIN
+69e5 str_X
+69e6 str_AUX_FUEL_TANKS_DESTROYED
+6a04 str_CONGRATULATIONS
+6a13 str_YOU_LANDED_HARD
+6a22 str_THAT_WAS_A_GREAT_LANDING
+6a3a str_THE_EAGLE_HAS_LANDED
+6a4e str_THE_COLUMBIA_HAS_LANDED
+6a65 str_YOU_HAVE_LANDED
+6a74 str_LIFE_SUPPORT_IS_GONE
+6a88 str_YOUR_TRIP_IS_ONE_WAY
+6a9c str_YOU_ARE_MAROONED
+6ab7 str_COMM_SYSTEM_DESTROYED
+6acc str_DESTROYED
+6ad5 str_YOU_CREATED_A_TWO_MILE_CRATER
+6af2 str_YOU_DESTROYED_A_100_MEGABUCK_LANDER
+6b1a str_NO_SURVIVORS
+6b32 ship_compute_accel_xy func
+6b71 fuel_drain_thrust func
+6b90 fuel_lost_to_crash func
+6be0 score_add_landing_bonus func
+6c45 landing_bonus_amount
+6c68 ship_update func
+6cef get_next_5bits func
+6cfe add16_signed_mag func
+6d00 add16_signed_mag_arg1 func
+6d02 add16_signed_mag_arg1_short
+6d04 add16_signed_magnitude_core func
+6d4f GameRunningLoop func
+6fb8 vec_letter_something func
+6ff9 debris_something_setup_gb3c func
+7022 explode_something_lots_math func
+706e FUN_706e func
+709b delta_something func
+70c0 divide func
+70d1 divide_setup_0 func
+70d5 divide_core func
+70ef mult16 func
+70f1 mult16_repeat func
+72fe min16 func
+73a9 draw_lots_of_stuff func
+74f8 VecPtrUpdate_dupe func
+7502 no_carry
+7503 VecRomJSRL func
+751b bcd_score_maybe func
+7576 score_landing_bonus func
+7595 debris_something func
+762d debris_get_animation_maybe2 func
+762f debris_get_animations_maybe func
+7655 debris0_setup
+7663 debris1_setup
+7671 debris2_setup
+767f debris3_setup
+7694 landed_choose_random func
+76bf multiply func
+76e9 sine_table_maybe2
+76f2 sine_sign_bits_xy
+76f6 thrust_to_vel_maybe
+7818 SetDigitVecPtr func
+781e ChkSetDigitPntr
+7823 DisplayDigit
+7838 VecPtrUpdate func
+7843 CalcDebrisPos func
+7859 NoIncX
+785a ChkYDebris
+7872 NoIncY
+7873 ChkPosXYUB
+78b0 SetScaleAndDirBits
+78d3 CheckCoinsInserted func
+78d5 check_coin
+78ef DecDropTimer
+78f1 CheckSlamSw
+78fe CheckSlamTimer
+790a CheckWaitTimer
+7916 CheckDropTimerVal
+7923 ResetDropTimer
+792e SetWaitTimer
+7932 CheckNextMech
+7938 DoNextCoinMech
+794d NextValidCoin_maybe
+7951 EndCoinCheck
+7953 audiolatch_set func
+795f io_outlatch_set func
+796b coin_credit_configure func
+799b CoinMultTbl
+799f draw_insert_coin_screen func
+79c2 dec_to_bcd_16bit func
+79c6 dec_to_bcd func
+79f2 DrawString func
+79f8 copy_next_vec_instruction
+7a1e increment_char_ptr
+7a28 return
+7a29 draw_lost_fuel_units_message func
+7a32 WriteText_newline func
+7a34 WriteText_wrapper func
+7a4f WriteText func
+7aa7 rts_7aa7 func
+7aa8 NMI func
+7aeb wait_for_watchdog
+7b57 DrawNumber_2_no_leading_zero func
+7b59 DrawNumber_no_leading_zero func
+7b5a DrawNumber func
+7b63 DrawNumStringLoop
+7b75 DoLowerDigit
+7b84 RESET func
+7b8e bzero_ram
+7b9d reset_in0_bit2_set
+7bb9 DoSelfTest
+7e59 VecRamPtr_reset_0x4000 func
+7e62 FUN_7e62 func
+7e64 font_lookup_table_memcpy func
+7e71 activate_spot_killer_maybe func
+7e7a vecgen_go_wait func
+7e7f vecgen_wait func
+7e95 io_in0_diagstep func
+7ea4 vecram_memcpy_8_update_vecptr func
+7ea6 vecram_memcpy_update_vecptr func
+7eaa vecram_memcpy_vecptr func
+7ec9 vecram_copy_short func
+7ecd vecram_copy_long func
+7ed1 vecram_memcpy_4 func
+7ed5 vec_add_to_offset func
+7edc vec_something_7edc
+7ee4 vec_copy_and_invert_maybe func
+7f10 vecgen_beam_off_maybe func
+7f17 DrawNumber_decimal_1 func
+7f2d font_fixup_0 func
+7f34 font_fixup_something
+7ffa NMI_vector
+7ffc RESET_vector
+7ffe IRQ_vector
+fffa NMI
+fffc RES
+fffe IRQ

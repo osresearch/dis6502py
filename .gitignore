@@ -1,2 +1,6 @@
 __pycache__
 .*.swp
+*.bak
+*.bin
+*.keep
+*.asm

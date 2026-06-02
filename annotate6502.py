@@ -11,13 +11,13 @@ header = """<!doctype html>
 <html><head>
 <meta charset=utf-8>
 <title>%s</title>
-<link rel="stylesheet" type="text/css" href="style.css">
+<link rel="stylesheet" type="text/css" href="../static/style.css">
 </head>
 <body>
 """
 
 footer = """<!-- footer -->
-<script src="highlight.js"></script>
+<script src="../static/highlight.js"></script>
 </body>
 </html>
 """
