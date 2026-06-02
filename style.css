@@ -1,10 +1,11 @@
 html {
 	background-color: #000000;
-	color: #00ff00;
 	font-family: monospace, monospace;
 	font-size: 20px;
+	color: #fff;
 }
 .addr, .bytes, .data, .instr, .label, .func, .hexdump, .xref, .comment {
+	color: #00ff00;
 	display: inline-block;
 }
 .addr { width: 4em; }
