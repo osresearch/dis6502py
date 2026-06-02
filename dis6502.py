@@ -28,6 +28,7 @@ class Dis6502:
 	def __init__(self):
 		self.ram = bytearray(self.max_addr)
 		self.flags = [ Flags(0) for i in range(0,self.max_addr) ]
+		self.types = {}
 		self.names = {}
 		self.refs = {}
 		self.trace_queue = deque()
@@ -65,8 +66,8 @@ class Dis6502:
 	def read16(self, i):
 		return self.ram[i+1] << 8 | self.ram[i]
 
-	def save_name(self, loc, name):
-		if loc in self.names:
+	def save_name(self, loc, name, force=False):
+		if loc in self.names and not force:
 			return
 		self.flags[loc] |= Flags.NAMED
 		self.names[loc] = name
@@ -92,7 +93,7 @@ class Dis6502:
 		for i in range(loc, loc-1024, -1):
 			if i < 0 or self.flags[i] == 0:
 				break
-			if self.flags[i] & (Flags.NAMED | Flags.SREF):
+			if self.flags[i] & (Flags.SREF):
 				return "%s+%x" % (self.name(i), loc - i)
 		return "%04x" % (loc)
 
@@ -325,13 +326,15 @@ class Dis6502:
 				words = line.rstrip().split(maxsplit=2)
 				addr = int(words[0], 16)
 				label = words[1]
-				self.save_name(addr, label)
+				self.save_name(addr, label, force=True)
 
 				if len(words) <= 2:
 					pass
 				elif words[2] == "func":
+					self.types[addr] = "func"
 					self.flags[addr] |= Flags.SREF
 				elif words[2] == "word":
+					self.types[addr] = "word"
 					self.flags[addr] |= Flags.WORD_LOW
 					self.flags[addr+1] |= Flags.WORD_HIGH
 					self.save_name(addr + 1, label + "_high")

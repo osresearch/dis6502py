@@ -28,6 +28,9 @@ class Annotator:
 		self.mode = "text"
 		self.title = "Annotated Disassembly"
 		self.dis = Dis6502()
+		self.filename = None
+		self.symbols_filename = None
+		self.last_name = None
 
 	def warn(self, s):
 		print(f"{self.filename}:{self.line_num}: {s}", file=sys.stderr)
@@ -67,7 +70,10 @@ class Annotator:
 		elif words[0] == ".vector":
 			self.dis.vector(int(words[1],0))
 		elif words[0] == ".symbols":
+			self.symbols_filename = words[1]
 			self.dis.load_symbols(words[1])
+		elif words[0] == ".save_symbols":
+			self.save_symbols()
 		elif words[0] == ".trace":
 			self.dis.trace_all()
 
@@ -78,7 +84,7 @@ class Annotator:
 			self.add_label(words[1])
 		elif words[0][0] == ".":
 			raise RuntimeError("Unknown directive " + words[0])
-		elif self.mode == "func": #re.match(r"[0-9a-fA-F]+", words[0]):
+		elif self.mode == "dis" or self.mode == "func" or self.mode == "label":
 			self.disassemble(line) #int(words[0],16), words[1:])
 		else:
 			print(line)
@@ -86,13 +92,14 @@ class Annotator:
 
 	def start_func(self, name):
 		self.mode = "func"
-		self.func = name
+		self.last_name = name
 		self.addr = None
 		#print(f"<div class=func id={name}>{name}</div>")
 
 	def add_label(self, name):
 		#print(f"<div class=label id={name}>{name}:</div>")
-		pass
+		self.mode = "label"
+		self.last_name = name
 
 	def make_label(self, addr):
 		# is this address a function or label?
@@ -127,6 +134,14 @@ class Annotator:
 		dis_instr = m[3]
 		comment = m[4]
 
+		# if we are in function or label mode, this new address
+		# is gets a new name
+		if self.mode == "func" or self.mode == "label":
+			self.dis.save_name(addr, self.last_name, force=True)
+			if self.mode == "func":
+				self.dis.flags[addr] |= Flags.SREF;
+			self.mode = "dis"
+
 		# the assumption is that the addresses will continue monotonically
 		if not self.addr is None and self.addr != addr:
 			self.warn("Expected address %04x not %04x" % (self.addr, addr))
@@ -159,6 +174,29 @@ class Annotator:
 </div>""")
 
 		self.addr = addr + len
+
+	def save_symbols(self):
+		if not self.symbols_filename:
+			return
+
+		# backup the old one
+		os.rename(self.symbols_filename, self.symbols_filename + ".bak")
+
+		# write the new symbols
+		with open(self.symbols_filename, "w") as f:
+			for addr in range(0,self.dis.max_addr):
+				flags = self.dis.flags[addr]
+				if flags & Flags.NAMED == 0:
+					continue
+				name = self.dis.names[addr]
+				if flags & Flags.SREF:
+					type = " func"
+				elif flags & Flags.WORD_LOW:
+					type = " word"
+				else:
+					type = ""
+				print("%04x %s%s" % (addr, name, type), file=f)
+
 
 
 for file in sys.argv[1:]:

@@ -15,6 +15,7 @@ html {
 .data { width: 32em; }
 .link { color: #f0ff00; }
 .xref { padding-left: 1em; padding-right: 1em; color: #008000;  }
+.comment { color: #fff; }
 a { text-decoration: none; }
 a:visited { color: #c0c000; }
 a:hover { color: #ffff00; }
