@@ -31,12 +31,13 @@ class Dis6502:
 		self.refs = {}
 		self.trace_queue = deque()
 
-	def load_binary(self, filename, base_address, vector_address):
+	def load_binary(self, filename, base):
 		file = open(filename, "rb").read()
 		self.ram[base:base + len(file)] = file
 		for i in range(base, base+len(file)):
 			self.flags[i] |= Flags.LOADED
 
+	def vector(self, vector_address):
 		reset = vector_address - 4
 		irq = vector_address - 2
 		nmi = vector_address - 6
@@ -365,7 +366,8 @@ if __name__ == "__main__":
 
 	filename = sys.argv[1]
 	dis = Dis6502()
-	dis.load_binary(filename, base, vector)
+	dis.load_binary(filename, base)
+	dis.vector(vector)
 
 	dis.flags[0x632a] |= Flags.WORD
 
