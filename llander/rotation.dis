@@ -1,16 +1,4 @@
-.title Lunar Lander 1979 annotate disassembly
-.header
 .text
-<h1>Lunar Lander (1979) disassembly</h1>
-
-This is an intro the the disassembly of Atari's 1979 Lunar Lander vector arcade game.
-There is also the full listing, <a href="llander.html"><tt>llander.asm</tt></a>.
-
-.binary llander-0x4800.bin 0x4800
-.vector 0x8000
-.symbols llander.sym
-.trace
-
 <h2 id=section_rotation>Ship rotation</h2>
 
 The first function we're going to look at to keep things simple is the one
@@ -108,19 +96,3 @@ Another way that programmers saved memory was by reusing instructions across dif
 The "function" at @63d3 is a single <tt>RTS</tt> instruction that other nearby functions use
 instead of having their own <tt>RTS</tt>.  This complicates the control-flow analysis of tools
 like ghidra and sometimes requires manual annotation to decompile.
-
-
-.text
-<hr>
-<h2 id="section-zeropage">Zero Page data</h2>
-On the 6502 global variables are often stored on the "zero page" since it is possible to reference
-the bottom 256 bytes of memory with shorter instruction sequences.  It is initialized to zero or
-a static value in the @Reset code.
-
-.byte 02 ship_angle_modulo			; Ship angle mod 90 degrees, from 0 - 31.
-.word 66 ship_angle				; 16-bit Ship angle
-.byte 97 fuel_state				; Bitmask of 0x80 = have fuel, 0x40 = out of fuel, 0 = not playing
-
-
-.footer
-.save_symbols
