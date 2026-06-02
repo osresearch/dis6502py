@@ -30,6 +30,7 @@ class Dis6502:
 		self.flags = [ Flags(0) for i in range(0,self.max_addr) ]
 		self.types = {}
 		self.names = {}
+		self.all_names = {}
 		self.refs = {}
 		self.comments = {}
 		self.trace_queue = deque()
@@ -46,11 +47,11 @@ class Dis6502:
 		nmi = vector_address - 6
 
 		if self.loaded_addr(reset):
-			self.start_trace(self.read16(reset), "RESET")
+			self.start_trace(self.read16(reset), "RESET_handler")
 		if self.loaded_addr(irq):
-			self.start_trace(self.read16(irq), "IRQ")
+			self.start_trace(self.read16(irq), "IRQ_handler")
 		if self.loaded_addr(nmi):
-			self.start_trace(self.read16(nmi), "NMI")
+			self.start_trace(self.read16(nmi), "NMI_handler")
 
 	def loaded_addr(self, i):
 		return 0 <= i \
@@ -67,11 +68,15 @@ class Dis6502:
 	def read16(self, i):
 		return self.ram[i+1] << 8 | self.ram[i]
 
-	def save_name(self, loc, name, force=False):
-		if loc in self.names and not force:
+	def save_name(self, addr, name, force=False):
+		if addr in self.names and not force:
 			return
-		self.flags[loc] |= Flags.NAMED
-		self.names[loc] = name
+		self.flags[addr] |= Flags.NAMED
+		self.names[addr] = name
+		prev_addr = self.all_names.get(name)
+		if prev_addr and prev_addr != addr:
+			raise RuntimeError("%04x: name '%s' already in use at %04x" % (addr, name, prev_addr))
+		self.all_names[name] = addr
 
 	def name(self, loc, use_default=False):
 		if self.flags[loc] & Flags.NAMED:
@@ -120,7 +125,9 @@ class Dis6502:
 			self.trace_instr(self.trace_queue.popleft())
 
 	def trace_one_inst(self, addr):
-		if self.flags[addr] & Flags.TDONE:
+		# special case that we will always decode a BRK
+		opcode = self.ram[addr]
+		if self.flags[addr] & Flags.TDONE and opcode != 0:
 			return None
 		self.flags[addr] |= Flags.TDONE
 		istart = addr
@@ -251,6 +258,7 @@ class Dis6502:
 			fmt += " (%s),Y"
 		else:
 			fmt += ' ???'
+			name = None
 
 		return (fmt, name, operand)
 
@@ -353,16 +361,25 @@ class Dis6502:
 					
 
 if __name__ == "__main__":
-	base = 0x4800
-	vector = 0x8000
+
+	if len(sys.argv) <= 1:
+		print(f"""Usage:
+{sys.argv[0]} filename.bin [filename.sym] [base_addr] [vector_addr]
+""", file=sys.stderr)
+		sys.exit(-1)
 
 	filename = sys.argv[1]
+	symbols = sys.argv[2] if len(sys.argv) > 2 else None
+	base = int(sys.argv[3], 0) if len(sys.argv) > 3 else 0x4800
+	vector = int(sys.argv[4], 0) if len(sys.argv) > 4 else 0x8000
+
 	dis = Dis6502()
 	dis.load_binary(filename, base)
 	dis.vector(vector)
 
-	if len(sys.argv) > 2:
-		dis.load_symbols(sys.argv[2])
+	if symbols:
+		dis.load_symbols(symbols)
+
 	dis.trace_all()
 
 	dis.dumpitout()
