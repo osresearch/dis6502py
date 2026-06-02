@@ -204,10 +204,12 @@ class Dis6502:
 			else:
 				rc += ",%02x" % (self.read8(addr+j))
 		return (j,rc)
-	def print_instr(self, addr, do_html = False):
+
+	# returns the instruction format string, the name of the target if any, and the target address or operand
+	def dis_instr(self, addr):
 		opcode = self.read8(addr)
 		ip = opcode_table[opcode]
-		rc = ip.name + "\t"
+		fmt = ip.name
 		if ip.length == 1:
 			operand = 0
 		elif ip.length == 2:
@@ -220,29 +222,38 @@ class Dis6502:
 			operand = sign8(operand) + addr
 
 		name = self.name(operand, 1)
-		if do_html:
-			name = "<a class=link href=#%04x>%s</a>" % (operand,name)
 
 		if ip.flags & OpcodeFlags.IMM:
-			rc += "#$%02x" % (operand)
+			# put the literal operand; should we do a constant lookup?
+			fmt += " #$%02x" % (operand)
+			name = None
 		elif ip.flags & (OpcodeFlags.ACC | OpcodeFlags.IMP):
-			pass
+			name = None
 		elif ip.flags & (OpcodeFlags.REL | OpcodeFlags.ABS | OpcodeFlags.ZPG):
-			rc += "%s" % (name)
+			fmt += " %s"
 		elif ip.flags & (OpcodeFlags.IND | OpcodeFlags.ZPI):
-			rc += "(%s)" % (name)
+			fmt += " (%s)"
 		elif ip.flags & (OpcodeFlags.ABX | OpcodeFlags.ZPX):
-			rc += "%s,X" % (name)
+			fmt += " %s,X"
 		elif ip.flags & (OpcodeFlags.ABY | OpcodeFlags.ZPY):
-			rc += "%s,Y" % (name)
+			fmt += " %s,Y"
 		elif ip.flags & (OpcodeFlags.INX):
-			rc += "(%s,X)" % (name)
+			fmt += " (%s,X)"
 		elif ip.flags & (OpcodeFlags.INY):
-			rc += "(%s),Y" % (name)
+			fmt += " (%s),Y"
 		else:
-			rc += '???'
+			fmt += ' ???'
 
-		return rc
+		return (fmt, name, operand)
+
+	def print_instr(self, addr, do_html = False):
+		(fmt,name,operand) = self.dis_instr(addr)
+		if do_html and name:
+			name = "<a class=link href=#%04x>%s</a>" % (operand,name)
+		if name:
+			return fmt % (name)
+		else:
+			return fmt
 
 	def disassemble(self, addr):
 		rc = ''
