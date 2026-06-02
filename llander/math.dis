@@ -1,0 +1,133 @@
+.text
+<h2>16-bit Math</h2>
+The 6502 is an 8-bit CPU with 8-bit wide registers and an 8-bit wide data bus.
+There is no multiply instruction, so it is necessary to implement it in software.
+Some games, like BattleZone have a math coprocessor for doing 3D transforms, but
+Lunar Lander does it in software.
+
+Since the registers are 8-bits wide, passing a 16-bit value to a function requires
+two of them.  Most of the time they are passed in A and X, but it is not consistent
+across all of the code in Lunar Lander.  However a 16-by-16 multiply needs more registers,
+so some temporary zero page locations are used.  The results are also left in
+zero page locations and can be used for chaning operations together.
+
+<h3>Minimum</h3>
+
+As a warmup, here's a function that returns the minimum of two 16-bit values that are stored in global variables
+on the zero page:
+
+.func min16
+72fe  a0ff    LDY #$ff                   ; Not sure what Y is used for in the return result
+7300  a57e    LDA min16_a_high           ; Assume A is higher, load high byte AH into A
+7302  a67d    LDX min16_a                ; and low byte AL into X
+7304  c580    CMP min16_b_high           ; Compare the high bytes of AH and BH
+7306  9012    BCC return_ax              ; AH is lower, return it
+7308  d00c    BNE return_b               ; BH is lower, return it instead
+730a  a47f    LDY min16_b                ; Need to compare the low bytes, load BL into Y
+730c  c47d    CPY min16_a                ; Compare BL and AL
+730e  b00a    BCS return_ax              ; A is lower, return it
+7310  a67f    LDX min16_b                ; move BL into X
+7312  a47d    LDY min16_a                ; why is Y loaded here?
+7314  9004    BCC return_ax              ; jump to return B (note that AH=BH, so it does not need to be loaded)
+.label return_b
+7316  a580    LDA min16_b_high           ; B is larger, move the BH into A
+7318  a67f    LDX min16_b                ; and BL into X
+.label return_ax
+731a  60      RTS                        ; Return the 16-bit value in A:X
+
+.text
+To translate this into C with the same logic flow is not very idomatic, but hopefully makes it easier to see how it maps
+to the 8-bit math of the assembly:
+<pre>
+uint8_t a_high, a_low;
+uint8_t b_high, b_low;
+uint16_t min16(void)
+{
+	uint8_t a = a_high;
+	uint8_t x = a_low;
+
+	if (a_high < b_high)
+		goto ret;
+
+	if (a_high > b_high)
+	{
+		a = b_high;
+		x = b_low;
+		goto ret;
+	}
+
+	if (a_low < b_low)
+		x = b_low;
+
+ret:
+	return a << 8 | x;
+}
+</pre>
+
+<h3>Multiply</h3>
+.func mult16
+70ef  8543    STA mult_a                 ; Store A into mult_a
+
+.func mult16_repeat
+70f1  8442    STY mult_y                 ; Store Y into mult_y
+70f3  a543    LDA mult_a                 ; Load mult_a...
+70f5  48      PHA                        ; and store it on the stack
+70f6  49ff    EOR #$ff                   ; Invert the high byte (to make a test easier later)...
+70f8  8543    STA mult_a                 ; and store it back in mult_a
+70fa  a900    LDA #$00                   ; A = 0
+70fc  8544    STA mult_acc               ; Zero the multiply output low...
+70fe  8545    STA mult_acc_high          ; and high bytes
+7100  a208    LDX #$08                   ; Number of rounds (8 since this is an 8x8 to 16-bit multiply)
+.label mult_start_round
+7102  0643    ASL mult_a                 ; Shift the inverted high byte to the left
+7104  b006    BCS mult_bit_not_set       ; If the top bit was set, skip the increment
+7106  6542    ADC mult_y                 ; Add mult_y to A
+7108  9002    BCC mult_bit_not_set       ; If this doesn't carry, skip updating the high byte
+710a  e645    INC mult_acc_high          ; The addition overflowed, increment the high byte
+.label mult_bit_not_set
+710c  ca      DEX                        ; Decrement our round counter
+710d  d007    BNE mult_continue_round    ; If it is not zero, do another round
+710f  aa      TAX                        ; Move the multiply accumulator low-byte to X
+7110  68      PLA                        ; Restore the non-inverted mult_a from the stack,
+7111  8543    STA mult_a                 ; and store it back in the memory location
+7113  a545    LDA mult_acc_high          ; Load the high byte of the multiply accumulator into A
+7115  60      RTS                        ; return the 16-bit value as the register pair X:A
+.label mult_continue_round
+7116  0a      ASL                        ; Multiply the low-byte of the result by 2
+7117  2645    ROL mult_acc_high          ; Multiply the high-byte by two, shifting in the carry
+7119  90e7    BCC mult_start_round       ; If this doesn't overflow, start another round
+711b  55a9    EOR bcd_score_maybe2,X     ; Record an error code?
+711d  00      BRK                        ; Halt the CPU due to the overflow
+
+
+.text
+I'm not certain about some of these operations; it seems that the <tt>mult_acc</tt> field is never used after being zeroed
+and I wonder if it is left over from a prior implementation.  This code also causes a problem with the tracing disassembler
+since it appears that there is subroutine call to 0x711c, which is in the middle of an instruction.
+
+In any event, this algorithm could be translate roughly to the C code:
+
+<pre>
+uint16_t mult16(uint8_t a, uint8_t y)
+{
+	uint8_t mult_acc = 0, mult_acc_high = 0;
+	uint8_t inv_a = ~a;
+
+	for(int8_t x = 8 ; x != 0 ; x--)
+	{
+		if (inv_a & 0x80)
+		{
+			mult_acc += y;
+			if (mult_acc + y > 0xFF)
+				mult_acc_high += 1;
+		}
+
+		mult_acc_high <<= 1;
+		if (mult_acc & 0x80)
+			mult_acc_high |= 1;
+		mult_acc <<= 1;
+	}
+
+	return mult_acc_high << 8 | mult_acc;
+}
+</pre>
