@@ -33,7 +33,7 @@ class Annotator:
 		self.last_name = None
 
 	def warn(self, s):
-		print(f"{self.filename}:{self.line_num}: {s}", file=sys.stderr)
+		print(f"{self.filename}:{self.line_num}: {'%04x' % (self.addr if self.addr else 0x0)} {s}", file=sys.stderr)
 
 	def annotate_file(self, filename):
 		self.line_num = 1
@@ -99,6 +99,8 @@ class Annotator:
 			self.save_symbols()
 		elif words[0] == ".trace":
 			self.dis.trace_all()
+		elif words[0] == ".dump":
+			self.dump(words[1])
 
 		# formatting commands
 		elif words[0] == ".func":
@@ -153,8 +155,6 @@ class Annotator:
 
 		return rc + "<br/>"
 
-		
-		# check for xrefs for this address
 	# a line that starts with a hex address
 	def disassemble(self, line):
 		m = re.match(r"([0-9a-fA-F]+)\s*([0-9a-fA-F]+)\s*([^;]+)(;.*)?", line)
@@ -176,7 +176,6 @@ class Annotator:
 		# the assumption is that the addresses will continue monotonically
 		if not self.addr is None and self.addr != addr:
 			self.warn("Expected address %04x not %04x" % (self.addr, addr))
-		addr_hex = "%04x" % (addr)
 
 		# make sure we are in a function
 		if not self.dis.is_op(addr):
@@ -187,6 +186,12 @@ class Annotator:
 		if dis_hexdump != hexdump:
 			self.warn(f"Expected hexdump {hexdump} not {dis_hexdump}")
 
+		# looks like we're good; disassemble it!
+		self.addr = addr + len
+
+		print(self.disassemble_instr(addr, comment))
+
+	def disassemble_instr(self, addr, comment):
 		# disassemble the instruction and hyperlink the destination if there is one
 		(fmt,op_name,operand) = self.dis.dis_instr(addr)
 		if not op_name:
@@ -202,13 +207,14 @@ class Annotator:
 		else:
 			comment_div = ""
 
-		print(f"""<div id={addr_hex}>{label_div}
+		addr_hex = "%04x" % (addr)
+		(len,hexdump) = self.dis.print_bytes(addr)
+
+		return f"""<div id={addr_hex}>{label_div}
 	<div class=addr>{addr_hex}</div>
 	<div class=bytes>{hexdump}</div>
 	<div class=instr>{instr}</div>{comment_div}
-</div>""")
-
-		self.addr = addr + len
+</div>"""
 
 	def save_symbols(self):
 		if not self.symbols_filename:
@@ -254,6 +260,32 @@ class Annotator:
 	<div class=hexdump>.{data_type}</div>{comment_div}
 </div>""")
 
+	# produce a consolidated dump (along with stats)
+	def dump(self, filename):
+		with open(filename, "w") as f:
+			print(header % (self.title), file=f)
+			self.addr = 0
+			total_ops = 0
+			op_comments = 0
+			while self.addr < self.dis.max_addr:
+				if self.dis.flags[self.addr] == 0:
+					self.addr += 1
+					continue
+
+				comment = self.dis.comments.get(self.addr)
+
+				if self.dis.is_op(self.addr):
+					print(self.disassemble_instr(self.addr, comment), file=f)
+					self.addr += self.dis.instr_len(self.addr)
+					total_ops += 1
+					if comment:
+						op_comments += 1
+				else:
+					# TODO: handle data
+					self.addr += 1
+			print(footer, file=f)
+
+		print("%d comments / %d ops %.2f%%" % (op_comments, total_ops, 100.0 * op_comments / total_ops), file=sys.stderr)
 
 ann = Annotator()
 for file in sys.argv[1:]:

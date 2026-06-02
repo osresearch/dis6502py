@@ -34,10 +34,10 @@
 003f GenByte_003f
 0040 GenByte_0040
 0041 GenByte_0041
-0042 multiply_42
-0043 multiply_43
-0044 multiply_44
-0045 multiply_45
+0042 mult_y
+0043 mult_a
+0044 mult_acc word
+0045 mult_acc_high
 0046 ship_accel_sign
 0048 delta2
 004a delta1
@@ -65,6 +65,10 @@
 0076 divisor2
 0077 remainder
 0078 dividend_working
+007d min16_a word
+007e min16_a_high
+007f min16_b word
+0080 min16_b_high
 0082 thrust_delta_last_raw
 0083 thrust_high
 0084 thrust_delta
@@ -151,8 +155,8 @@
 5864 string_table_german
 5fa1 language_offset_maybe
 5fa4 string_table_fixup_something
-6001 InitGame
-6008 GameLoop
+6001 InitGame func
+6008 GameLoop func
 6062 GameLoop_maybe
 61c0 call_init_game_thunk
 61c3 abort_button_handler
@@ -272,7 +276,12 @@
 70d5 divide_core func
 70ef mult16 func
 70f1 mult16_repeat func
+7102 mult_start_round
+710c mult_bit_not_set
+7116 mult_continue_round
 72fe min16 func
+7316 return_b
+731a return_ax
 73a9 draw_lots_of_stuff func
 74f8 VecPtrUpdate_dupe func
 7502 no_carry
@@ -288,6 +297,10 @@
 767f debris3_setup
 7694 landed_choose_random func
 76bf multiply func
+76cc L76cc
+76d2 L76d2
+76d9 L76d9
+76e2 L76e2
 76e9 sine_table_maybe2
 76f2 sine_sign_bits_xy
 76f6 thrust_to_vel_maybe
@@ -330,7 +343,7 @@
 7a34 WriteText_wrapper func
 7a4f WriteText func
 7aa7 rts_7aa7 func
-7aa8 NMI func
+7aa8 NMI_handler func
 7aeb wait_for_watchdog
 7b57 DrawNumber_2_no_leading_zero func
 7b59 DrawNumber_no_leading_zero func

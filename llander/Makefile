@@ -1,14 +1,16 @@
-all: index.html
+all: llander.sym llander.asm
 
-index.html: FORCE
-	../annotate6502.py > $@ \
+llander.sym: FORCE
+	../annotate6502.py \
 		header.dis \
 		buttons.dis \
 		rotation.dis \
+		math.dis \
 		zeropage.dis \
 		footer.dis \
+		> index.html
 
-llander.asm: FORCE
-	../dis6502.py > $@ llander-0x4800.bin 0x4800
+llander.asm: llander.sym
+	../dis6502.py > $@ llander-0x4800.bin llander.sym 0x4800
 
 FORCE:
