@@ -1,0 +1,29 @@
+html {
+	background-color: #000000;
+	color: #00ff00;
+	font-family: monospace, monospace;
+	font-size: 20px;
+}
+.addr, .bytes, .data, .instr, .label, .func, .hexdump, .xref {
+	display: inline-block;
+}
+.addr { width: 4em; }
+.bytes { width: 12em; }
+.label, .func { padding-left: 12em; }
+.func { padding-top: 2em; font-weight: bolder; }
+.data { width: 32em; }
+.link { color: #80ff00; }
+.xref { padding-left: 1em; padding-right: 1em; color: #008000;  }
+a { text-decoration: none; }
+a:hover { color: #ffff00; }
+:target { background-color: #303000; }
+.highlight { color: #ff00ff !important; }
+.highlight  .link { color: #ff00ff; }
+.highlight  .xref { color: #ff00ff; }
+
+.anchor{
+	display: block;
+	height: 50vh;
+	margin-top: -50vh;
+	visibility: hidden;
+}

@@ -251,10 +251,8 @@ class Dis6502:
 
 		return (fmt, name, operand)
 
-	def print_instr(self, addr, do_html = False):
+	def print_instr(self, addr):
 		(fmt,name,operand) = self.dis_instr(addr)
-		if do_html and name:
-			name = "<a class=link href=#%04x>%s</a>" % (operand,name)
 		if name:
 			return fmt % (name)
 		else:
@@ -306,16 +304,13 @@ class Dis6502:
 
 		return (len, rc)
 			
-	def dumpitout(self, do_html=False):
+	def dumpitout(self):
 		addr = 0
 		while addr < self.max_addr:
 			if self.flags[addr] == 0:
 				addr += 1
 				continue
-			if do_html:
-				(len,text) = self.disassemble_html(addr)
-			else:
-				(len,text) = self.disassemble(addr)
+			(len,text) = self.disassemble(addr)
 			print(text)
 			addr += len
 
@@ -329,44 +324,9 @@ class Dis6502:
 				label = words[1]
 				self.save_name(address, label)
 
-css = """<style>
-html {
-	background-color: #000000;
-	color: #00ff00;
-	font-family: monospace, monospace;
-	font-size: 20px;
-}
-.addr, .bytes, .data, .instr, .label, .func, .hexdump, .xref {
-	display: inline-block;
-}
-.addr { width: 4em; }
-.bytes { width: 12em; }
-.label, .func { padding-left: 12em; }
-.func { padding-top: 2em; font-weight: bolder; }
-.data { width: 32em; }
-.link { color: #80ff00; }
-.xref { padding-left: 1em; padding-right: 1em; color: #008000;  }
-a { text-decoration: none; }
-a:hover { color: #ffff00; }
-:target { background-color: #303000; }
-.highlight { color: #ff00ff !important; }
-.highlight  .link { color: #ff00ff; }
-.highlight  .xref { color: #ff00ff; }
-
-.anchor{
-  display: block;
-  height: 50vh;
-  margin-top: -50vh;
-  visibility: hidden;
-}
-</style>
-"""
-
-
 if __name__ == "__main__":
 	base = 0x4800
 	vector = 0x8000
-	do_html = True
 
 	filename = sys.argv[1]
 	dis = Dis6502()
@@ -379,39 +339,4 @@ if __name__ == "__main__":
 		dis.load_symbols(sys.argv[2])
 	dis.trace_all()
 
-	if do_html:
-		print(f"""doctype html>
-<html><head>
-<meta charset=utf-8>
-<title>{filename} disassembly</title>
-</head>
-{css}
-<body>
-""")
-
-	dis.dumpitout(do_html=do_html)
-
-	if do_html:
-		print("""
-<script>
-function get_anchor(url) { return url.split("#")[1] }
-function highlight(url, enable)
-{
-	var anchor = url.split("#")[1];
-	if (!anchor) return;
-	var dest = document.getElementById(anchor);
-	if (!dest) return;
-	console.log("focus", anchor, dest, enable)
-	if (enable)
-		dest.classList.add("highlight");
-	else
-		dest.classList.remove("highlight");
-}
-
-for(var el of document.getElementsByClassName("link"))
-{
-	el.addEventListener("mouseenter", (event) => highlight(event.target.href, true));
-	el.addEventListener("mouseleave", (event) => highlight(event.target.href, false));
-}
-</script>
-""")
+	dis.dumpitout()
