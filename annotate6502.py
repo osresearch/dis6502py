@@ -82,6 +82,8 @@ class Annotator:
 			self.start_func(words[1])
 		elif words[0] == ".label":
 			self.add_label(words[1])
+		elif words[0] == ".byte":
+			self.add_data("byte", words[1:])
 		elif words[0][0] == ".":
 			raise RuntimeError("Unknown directive " + words[0])
 		elif self.mode == "dis" or self.mode == "func" or self.mode == "label":
@@ -165,7 +167,11 @@ class Annotator:
 			instr = fmt % (op_name)
 
 		label_div = self.make_label(addr)
-		comment_div = f"\n\t<div class=comment>{comment}</div>" if comment else ""
+		if comment:
+			self.dis.comments[addr] = comment
+			comment_div = f"\n\t<div class=comment>{comment}</div>"
+		else:
+			comment_div = ""
 
 		print(f"""<div id={addr_hex}>{label_div}
 	<div class=addr>{addr_hex}</div>
@@ -197,6 +203,27 @@ class Annotator:
 					type = ""
 				print("%04x %s%s" % (addr, name, type), file=f)
 
+	def add_data(self, data_type, words):
+		# addr name ; optional comment
+		addr = int(words[0],16)
+		name = words[1]
+		self.dis.add_symbol(addr, name, data_type)
+
+		label_div = self.make_label(addr)
+
+		if len(words) > 2:
+			comment = ' '.join(words[2:])
+			self.dis.comments[addr] = comment
+			comment_div = f"\n\t<div class=comment>{comment}</div>"
+		else:
+			comment_div = ""
+
+		addr_hex = "%04x" % (addr)
+
+		print(f"""<div id={addr_hex}>{label_div}
+	<div class=addr>{addr_hex}</div>
+	<div class=hexdump>.{data_type}</div>{comment_div}
+</div>""")
 
 
 for file in sys.argv[1:]:

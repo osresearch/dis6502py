@@ -31,6 +31,7 @@ class Dis6502:
 		self.types = {}
 		self.names = {}
 		self.refs = {}
+		self.comments = {}
 		self.trace_queue = deque()
 
 	def load_binary(self, filename, base):
@@ -317,6 +318,26 @@ class Dis6502:
 			addr += len
 
 
+	def add_symbol(self, addr, name, data_type):
+		self.save_name(addr, name, force=True)
+
+		if data_type is None:
+			pass
+		elif data_type == "func":
+			self.types[addr] = "func"
+			self.flags[addr] |= Flags.SREF
+		elif data_type == "byte":
+			self.types[addr] = "byte"
+			self.flags[addr] |= Flags.DREF
+		elif data_type == "word":
+			self.types[addr] = "word"
+			self.flags[addr] |= Flags.WORD_LOW | Flags.DREF
+			self.flags[addr+1] |= Flags.WORD_HIGH | Flags.DREF
+			self.save_name(addr + 1, name + "_high")
+		else:
+			return None
+
+		return True
 	def load_symbols(self, filename):
 		with open(filename, "r") as f:
 			line_num = 0
@@ -325,20 +346,9 @@ class Dis6502:
 				line_num += 1
 				words = line.rstrip().split(maxsplit=2)
 				addr = int(words[0], 16)
-				label = words[1]
-				self.save_name(addr, label, force=True)
+				name = words[1]
 
-				if len(words) <= 2:
-					pass
-				elif words[2] == "func":
-					self.types[addr] = "func"
-					self.flags[addr] |= Flags.SREF
-				elif words[2] == "word":
-					self.types[addr] = "word"
-					self.flags[addr] |= Flags.WORD_LOW
-					self.flags[addr+1] |= Flags.WORD_HIGH
-					self.save_name(addr + 1, label + "_high")
-				else:
+				if not self.add_symbol(addr, name, words[2] if len(words) > 2 else None):
 					raise RuntimeError(f"{filename}:{line_num}: Unknown type {words[2]}")
 					
 

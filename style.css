@@ -14,23 +14,25 @@ html {
 .label, .func { padding-left: 8em; }
 .func { padding-top: 1em; font-weight: bolder; }
 .data { width: 32em; }
-.link { color: #f0ff00; }
-.xref { padding-left: 1em; padding-right: 1em; color: #008000;  }
+.link { color: #80ff00; }
+.xref { padding-left: 1em; padding-right: 1em; color: #808000;  }
+.xref:visited { color: #660; }
 .comment { color: #fff; }
 a { text-decoration: none; }
-a:visited { color: #c0c000; }
+a:visited { color: #80ff00; }
 a:hover { color: #ffff00; }
 :target {
 	background-color: #303000;
 	/* transition: background-color 5s linear; */
 }
-.highlight { color: #ff00ff !important; }
-.highlight  .link { color: #ff00ff; }
-.highlight  .xref { color: #ff00ff; }
+
+.highlight :is(.addr, .bytes, .instr, .link, .xref, .label, .comment) {
+	color: #ff00ff;
+}
 
 pre {
 	padding-left: 4em;
-	color: #f0ff00;
+	color: #00ff00;
 }
 
 .anchor{
