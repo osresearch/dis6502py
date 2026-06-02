@@ -221,7 +221,7 @@ class Dis6502:
 
 		name = self.name(operand, 1)
 		if do_html:
-			name = f"<a class=link href=#{name}>{name}</a>"
+			name = "<a class=link href=#%04x>%s</a>" % (operand,name)
 
 		if ip.flags & OpcodeFlags.IMM:
 			rc += "#$%02x" % (operand)
@@ -377,20 +377,24 @@ if __name__ == "__main__":
 	if do_html:
 		print("""
 <script>
+function get_anchor(url) { return url.split("#")[1] }
+function highlight(url, enable)
+{
+	var anchor = url.split("#")[1];
+	if (!anchor) return;
+	var dest = document.getElementById(anchor);
+	if (!dest) return;
+	console.log("focus", anchor, dest, enable)
+	if (enable)
+		dest.classList.add("highlight");
+	else
+		dest.classList.remove("highlight");
+}
+
 for(var el of document.getElementsByClassName("link"))
 {
-	el.addEventListener("mouseenter", (event) => {
-		dest = document.getElementById(event.target.innerHTML)
-		console.log("focus", event.target.innerHTML, dest)
-		if (dest)
-			dest.classList.add("highlight");
-	})
-	el.addEventListener("mouseleave", (event) => {
-		dest = document.getElementById(event.target.innerHTML)
-		console.log("unfocus", event.target.innerHTML, dest)
-		if (dest)
-			dest.classList.remove("highlight");
-	})
+	el.addEventListener("mouseenter", (event) => highlight(event.target.href, true));
+	el.addEventListener("mouseleave", (event) => highlight(event.target.href, false));
 }
 </script>
 """)
