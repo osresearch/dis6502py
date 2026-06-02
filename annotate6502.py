@@ -47,6 +47,29 @@ class Annotator:
 					self.warn("error")
 					raise(e)
 
+	# update the hex dumps and labels in a file with the current symbols
+	def rewrite_file(self, filename):
+		self.line_num = 1
+		self.filename = filename
+		lines = open(filename, "r").readlines()
+		os.rename(filename, filename + ".bak")
+		with open(filename, "w") as f:
+			for line in lines:
+				line = line.rstrip()
+				m = re.match(r"([0-9a-fA-F]+)\s+([0-9a-fA-F]+)\s*([^;]+)(;.*)?", line)
+				if not m:
+					print(line, file=f)
+					continue
+
+				# this is a hex dump line; disassemble the instruction
+				addr = int(m[1],16)
+				comment = m[4] if m[4] else ";"
+				(len,text) = self.dis.disassemble(addr, include_label=False)
+
+				# pad the text so that the correct number of tabs lines it up
+				text = text.ljust(40)
+				print(text, comment, file=f)
+
 
 	def annotate(self, line):
 		line = line.rstrip()
@@ -84,6 +107,8 @@ class Annotator:
 			self.add_label(words[1])
 		elif words[0] == ".byte":
 			self.add_data("byte", words[1:])
+		elif words[0] == ".word":
+			self.add_data("word", words[1:])
 		elif words[0][0] == ".":
 			raise RuntimeError("Unknown directive " + words[0])
 		elif self.mode == "dis" or self.mode == "func" or self.mode == "label":
@@ -110,7 +135,11 @@ class Annotator:
 			return ''
 
 		flags = self.dis.flags[addr]
-		div_class = "func" if flags & Flags.SREF else "label"
+		div_class = "label"
+		if flags & Flags.SREF:
+			div_class = "func"
+		elif flags & Flags.DREF:
+			div_class = "data_label"
 
 		rc = f"\n\t<div class={div_class} id={name}>{name}:</div>"
 
@@ -226,5 +255,8 @@ class Annotator:
 </div>""")
 
 
+ann = Annotator()
 for file in sys.argv[1:]:
-	Annotator().annotate_file(file)
+	ann.annotate_file(file)
+for file in sys.argv[1:]:
+	ann.rewrite_file(file)

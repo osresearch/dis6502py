@@ -261,21 +261,21 @@ class Dis6502:
 		else:
 			return fmt
 
-	def disassemble(self, addr):
+	def disassemble(self, addr, include_label=True):
 		rc = ''
 		name = self.name(addr)
-		if name:
+		if name and include_label:
 			if self.flags[addr] & Flags.SREF:
 				rc += "\n"
 			rc += "\t%s:\n" % (name)
 
 		if self.is_op(addr):
 			(len,hexdump) = self.print_bytes(addr)
-			rc += "%04x\t%-6s\t" % (addr, hexdump)
+			rc += "%04x  %-6s  " % (addr, hexdump)
 			rc += self.print_instr(addr)
 		else:
 			(len,hexdump) = self.print_data(addr)
-			rc += "%04x\t\t%s" % (addr, hexdump)
+			rc += "%04x      %s" % (addr, hexdump)
 		return (len, rc)
 
 	def disassemble_html(self, addr):
