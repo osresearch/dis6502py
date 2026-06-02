@@ -4,12 +4,13 @@ html {
 	font-family: monospace, monospace;
 	font-size: 20px;
 }
-.addr, .bytes, .data, .instr, .label, .func, .hexdump, .xref {
+.addr, .bytes, .data, .instr, .label, .func, .hexdump, .xref, .comment {
 	display: inline-block;
 }
 .addr { width: 4em; }
-.bytes { width: 12em; }
-.label, .func { padding-left: 12em; }
+.bytes { width: 6em; }
+.instr { width: 20em; }
+.label, .func { padding-left: 8em; }
 .func { padding-top: 2em; font-weight: bolder; }
 .data { width: 32em; }
 .link { color: #80ff00; }

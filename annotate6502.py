@@ -46,18 +46,20 @@ class Annotator:
 
 
 	def annotate(self, line):
-		words = line.rstrip().split()
+		line = line.rstrip()
+		words = line.split()
 		if len(words) == 0:
-			print()
+			if self.mode == "text":
+				print("<br/>")
 		elif words[0] == ".title":
 			self.title = ' '.join(words[1:])
 		elif words[0] == ".text":
 			self.mode = "text"
+			print("<br/>")
 		elif words[0] == ".header":
 			print(header % (self.title))
 		elif words[0] == ".footer":
 			print(footer)
-
 
 		# commands to the disassembler
 		elif words[0] == ".binary":
@@ -76,8 +78,8 @@ class Annotator:
 			self.add_label(words[1])
 		elif words[0][0] == ".":
 			raise RuntimeError("Unknown directive " + words[0])
-		elif re.match(r"[0-9a-fA-F]", words[0]):
-			self.disassemble(int(words[0],16), words[1:])
+		elif self.mode == "func": #re.match(r"[0-9a-fA-F]+", words[0]):
+			self.disassemble(line) #int(words[0],16), words[1:])
 		else:
 			print(line, end='')
 
@@ -116,7 +118,15 @@ class Annotator:
 		
 		# check for xrefs for this address
 	# a line that starts with a hex address
-	def disassemble(self, addr, words):
+	def disassemble(self, line):
+		m = re.match(r"([0-9a-fA-F]+)\s*([0-9a-fA-F]+)\s*([^;]+)(;.*)?", line)
+		if not m:
+			raise RuntimeError("unable to parse disassembly")
+		addr = int(m[1],16)
+		dis_hexdump = m[2]
+		dis_instr = m[3]
+		comment = m[4]
+
 		# the assumption is that the addresses will continue monotonically
 		if not self.addr is None and self.addr != addr:
 			self.warn("Expected address %04x not %04x" % (self.addr, addr))
@@ -127,7 +137,6 @@ class Annotator:
 			self.warn("Address %04x is not an instruction" % (addr))
 
 		# the next word should be the hex dump of the instructions
-		dis_hexdump = words[0]
 		(len,hexdump) = self.dis.print_bytes(addr)
 		if dis_hexdump != hexdump:
 			self.warn(f"Expected hexdump {hexdump} not {dis_hexdump}")
@@ -141,11 +150,12 @@ class Annotator:
 			instr = fmt % (op_name)
 
 		label_div = self.make_label(addr)
+		comment_div = f"\n\t<div class=comment>{comment}</div>" if comment else ""
 
 		print(f"""<div id={addr_hex}>{label_div}
 	<div class=addr>{addr_hex}</div>
 	<div class=bytes>{hexdump}</div>
-	<div class=instr>{instr}</div>
+	<div class=instr>{instr}</div>{comment_div}
 </div>""")
 
 		self.addr = addr + len
