@@ -262,7 +262,7 @@ class Dis6502:
 		return (len, rc)
 
 	def disassemble_html(self, addr):
-		rc = ''
+		rc = "<div id=%04x>" % (addr)
 		name = self.name(addr)
 		if name:
 			flags = self.flags[addr]
@@ -274,9 +274,10 @@ class Dis6502:
 
 				if flags & (Flags.SREF | Flags.DREF):
 					ref_name = self.name_relative(ref)
-				rc += f"<a class=xref href=#{ref_addr}>{ref_name}</a>"
+				rc += f"<a class='xref link' href=#{ref_addr}>{ref_name}</a>"
 			rc += "<br/>\n"
-		rc += f"<div class=addr id=%04x>%04x</div>" % (addr, addr)
+		#rc += f"<span class=anchor id=%04x></span>" % (addr)
+		rc += "<div class=addr>%04x</div>" % (addr)
 		if self.flags[addr] & Flags.ISOP:
 			(len,hexdump) = self.print_bytes(addr)
 			instr = self.print_instr(addr, do_html=True)
@@ -285,7 +286,7 @@ class Dis6502:
 			(len,hexdump) = self.print_data(addr)
 			rc += f"<div class=bytes>{hexdump}</div>"
 
-		rc += "<br/>"
+		rc += "</div>"
 
 		return (len, rc)
 			
@@ -315,30 +316,32 @@ class Dis6502:
 css = """<style>
 html {
 	background-color: #000000;
-}
-.addr, .bytes, .data, .instr, .label, .func, .hexdump, .xref {
 	color: #00ff00;
 	font-family: monospace, monospace;
 	font-size: 20px;
+}
+.addr, .bytes, .data, .instr, .label, .func, .hexdump, .xref {
 	display: inline-block;
 }
 .addr { width: 4em; }
 .bytes { width: 12em; }
 .label, .func { padding-left: 12em; }
 .func { padding-top: 2em; font-weight: bolder; }
-.xref { padding-left: 1em; padding-right: 1em; color: #008000;  }
 .data { width: 32em; }
-.link { 
-	color: #ff00ff;
-}
-a {
-	text-decoration: none;
-}
-a:hover {
-	color: #ffff00;
-}
-:target {
-	color: #ffff00;
+.link { color: #80ff00; }
+.xref { padding-left: 1em; padding-right: 1em; color: #008000;  }
+a { text-decoration: none; }
+a:hover { color: #ffff00; }
+:target { background-color: #303000; }
+.highlight { color: #ff00ff !important; }
+.highlight  .link { color: #ff00ff; }
+.highlight  .xref { color: #ff00ff; }
+
+.anchor{
+  display: block;
+  height: 50vh;
+  margin-top: -50vh;
+  visibility: hidden;
 }
 </style>
 """
@@ -380,13 +383,13 @@ for(var el of document.getElementsByClassName("link"))
 		dest = document.getElementById(event.target.innerHTML)
 		console.log("focus", event.target.innerHTML, dest)
 		if (dest)
-			dest.style.background = "pink";
+			dest.classList.add("highlight");
 	})
 	el.addEventListener("mouseleave", (event) => {
 		dest = document.getElementById(event.target.innerHTML)
 		console.log("unfocus", event.target.innerHTML, dest)
 		if (dest)
-			dest.style.background = "";
+			dest.classList.remove("highlight");
 	})
 }
 </script>
