@@ -96,14 +96,13 @@ ret:
 7116  0a      ASL                        ; Multiply the low-byte of the result by 2
 7117  2645    ROL mult_acc_high          ; Multiply the high-byte by two, shifting in the carry
 7119  90e7    BCC mult_start_round       ; If this doesn't overflow, start another round
-711b  55a9    EOR bcd_score_maybe2,X     ; Record an error code?
-711d  00      BRK                        ; Halt the CPU due to the overflow
 
 
 .text
 I'm not certain about some of these operations; it seems that the @mult_acc field is never used after being zeroed
 and I wonder if it is left over from a prior implementation.  This code also causes a problem with the tracing disassembler
-since it appears that there is subroutine call to @0x711c, which is in the middle of an instruction.
+since it appears that there is subroutine call to @0x711c, which is in the middle of an instruction.  If the multiply
+does overflow, a `BRK` instruction is triggered that should halt the game.
 
 In any event, this algorithm could be translate roughly to the C code:
 
@@ -131,3 +130,52 @@ uint16_t mult16(uint8_t a, uint8_t y)
 	return mult_acc_high << 8 | mult_acc;
 }
 </pre>
+
+
+### Trig
+
+.text
+The @mult16 function is used to compute the ship's X and Y acceleration based on the current thrust,
+a thrust-to-force lookup table, and then multiplying by the sine and cosine of the ship's angle to
+rotate the force into the screen coordinate frame.
+
+.func ship_compute_accel_xy:
+6b32  a502    LDA ship_angle_modulo      ; Read the ship's angle in the quadrant
+6b34  4a      LSR                        ; >>
+6b35  4a      LSR                        ; >>
+6b36  4a      LSR                        ; Divide by 8
+6b37  aa      TAX                        ; Move this into X
+6b38  bdf276  LDA sine_quadrants,X       ;
+6b3b  8546    STA ship_accel_sign        ;
+6b3d  0a      ASL                        ;
+6b3e  8547    STA Z47                    ;
+6b40  a601    LDX actual_thrust_maybe    ;
+6b42  bdf676  LDA thrust_to_acc,X        ;
+6b45  850b    STA thrust_mode_maybe      ;
+6b47  a502    LDA ship_angle_modulo      ;
+6b49  290f    AND #$0f                   ;
+6b4b  c909    CMP #$09                   ;
+6b4d  9004    BCC L6b53                  ;
+6b4f  490f    EOR #$0f                   ;
+6b51  6900    ADC #$00                   ;
+.label L6b53:
+6b53  8537    STA GenByte_0037           ;
+6b55  4907    EOR #$07                   ;
+6b57  6901    ADC #$01                   ;
+6b59  290f    AND #$0f                   ;
+6b5b  aa      TAX                        ;
+6b5c  bde976  LDA sine_table,X           ;
+6b5f  a40b    LDY thrust_mode_maybe      ;
+6b61  20ef70  JSR mult16                 ;
+6b64  8558    STA ship_accel             ;
+6b66  a637    LDX GenByte_0037           ;
+6b68  bde976  LDA sine_table,X           ;
+6b6b  20ef70  JSR mult16                 ;
+6b6e  8559    STA Z59                    ;
+6b70  60      RTS                        ;
+
+.byte 76f2 sine_quadrants 4 ; Define the quadrants
+.byte 76e9 sine_table 9 ; Reduced sine table for 0-45 degrees
+.byte 76f6 thrust_to_acc 16 ; How much acceleration comes from the different thrust levels
+.text
+

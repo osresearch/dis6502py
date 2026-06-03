@@ -153,13 +153,13 @@ class Annotator:
 
 
 	def start_func(self, name):
+		name = name.rstrip(":")
 		self.mode = "func"
 		self.last_name = name
 		self.addr = None
-		#print(f"<div class=func id={name}>{name}</div>")
 
 	def add_label(self, name):
-		#print(f"<div class=label id={name}>{name}:</div>")
+		name = name.rstrip(":")
 		self.mode = "label"
 		self.last_name = name
 
@@ -263,24 +263,43 @@ class Annotator:
 				if flags & Flags.NAMED == 0:
 					continue
 				name = self.dis.names[addr]
+
 				if flags & Flags.SREF:
-					type = " func"
+					data_type = " func"
 				elif flags & Flags.WORD_LOW:
-					type = " word"
+					data_type = " word"
 				else:
-					type = ""
-				print("%04x %s%s" % (addr, name, type), file=f)
+					data_type = ""
+
+				if flags & Flags.ARRAY:
+					array_size = " %d" % (self.dis.arrays[addr])
+					if data_type == "":
+						data_type = " byte"
+				else:
+					array_size = ""
+
+				print("%04x %s%s%s" % (addr, name, data_type, array_size), file=f)
 
 	def add_data(self, data_type, words):
-		# addr name ; optional comment
-		addr = int(words[0],16)
-		name = words[1]
-		self.dis.add_symbol(addr, name, data_type)
+		# addr name [optional-array-size] [; optional comment]
+		line = ' '.join(words)
+		m = re.match(r"((?:0x)?[0-9A-Fa-f]+)\s+([^\s]+)\s+(0x[0-9A-Fa-f]+|[0-9]+)?\s*(;.*)$", line)
+		if not m:
+			raise RuntimeError(f"unable to parse data definition '{line}'")
 
+		addr = int(m[1],16)
+		name = m[2]
+		array_len = int(m[3],0) if m[3] else None
+		comment = m[4]
+		self.dis.add_symbol(addr, name, data_type, array_len)
+
+		(data_len,div) = self.print_data(addr, comment)
+		print(div)
+
+	def print_data(self, addr, comment):
 		label_div = self.make_label(addr)
 
-		if len(words) > 2:
-			comment = ' '.join(words[2:])
+		if comment:
 			self.dis.comments[addr] = comment
 			comment_div = f"\n\t<div class=comment>{self.fake_markdown(comment)}</div>"
 		else:
@@ -288,9 +307,24 @@ class Annotator:
 
 		addr_hex = "%04x" % (addr)
 
-		print(f"""<div id={addr_hex}>{label_div}
+		flags = self.dis.flags[addr]
+		data_type = self.dis.types.get(addr, "byte")
+		array_len = self.dis.arrays.get(addr, 1)
+		if flags & Flags.LOADED:
+			hexdump = []
+			for i in range(0,array_len):
+				if data_type == "word":
+					hexdump.append("%04x" % self.dis.read16(addr + 2*i))
+				else:
+					hexdump.append("%02x" % self.dis.read8(addr + i))
+			hexdump = ' ' + (','.join(hexdump))
+		else:
+			hexdump = ''
+
+		data_size = array_len * (2 if data_type == "word" else 1)
+		return (data_size, f"""<div id={addr_hex}>{label_div}
 	<div class=addr>{addr_hex}</div>
-	<div class=hexdump>.{data_type}</div>{comment_div}
+	<div class=hexdump>.{data_type}{hexdump}</div>{comment_div}
 </div>""")
 
 	# produce a consolidated dump (along with stats)
@@ -306,13 +340,20 @@ class Annotator:
 					continue
 
 				comment = self.dis.comments.get(self.addr)
+				flags = self.dis.flags[self.addr]
 
-				if self.dis.is_op(self.addr):
+				if flags & Flags.ISOP:
 					print(self.disassemble_instr(self.addr, comment), file=f)
 					self.addr += self.dis.instr_len(self.addr)
 					total_ops += 1
-					if comment:
+
+					# don't include empty comments, which are added automatically
+					if comment and len(comment) > 1:
 						op_comments += 1
+				elif flags & Flags.DREF:
+					(data_len,div) = self.print_data(self.addr, comment)
+					print(div, file=f)
+					self.addr += data_len
 				else:
 					# TODO: handle data
 					self.addr += 1

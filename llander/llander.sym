@@ -255,6 +255,7 @@
 6af2 str_YOU_DESTROYED_A_100_MEGABUCK_LANDER
 6b1a str_NO_SURVIVORS
 6b32 ship_compute_accel_xy func
+6b53 L6b53
 6b71 fuel_drain_thrust func
 6b90 fuel_lost_to_crash func
 6be0 score_add_landing_bonus func
@@ -301,9 +302,9 @@
 76d2 L76d2
 76d9 L76d9
 76e2 L76e2
-76e9 sine_table_maybe2
-76f2 sine_sign_bits_xy
-76f6 thrust_to_vel_maybe
+76e9 sine_table byte 9
+76f2 sine_quadrants byte 4
+76f6 thrust_to_acc byte 16
 7818 SetDigitVecPtr func
 781e ChkSetDigitPntr
 7823 DisplayDigit

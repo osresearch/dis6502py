@@ -17,6 +17,7 @@ class Flags(IntFlag):
 	OFFSET = auto()		# should be printed as an offset
 	WORD_LOW = auto()	# Data is 16-bits wide, low byte
 	WORD_HIGH = auto()	# Data is 16-bits wide, high byte
+	ARRAY = auto()		# Data is part of an array
 
 # sign extend an 8-bit value
 def sign8(op):
@@ -30,6 +31,7 @@ class Dis6502:
 		self.flags = [ Flags(0) for i in range(0,self.max_addr) ]
 		self.types = {}
 		self.names = {}
+		self.arrays = {}
 		self.all_names = {}
 		self.refs = {}
 		self.comments = {}
@@ -78,21 +80,24 @@ class Dis6502:
 			raise RuntimeError("%04x: name '%s' already in use at %04x" % (addr, name, prev_addr))
 		self.all_names[name] = addr
 
-	def name(self, loc, use_default=False):
-		if self.flags[loc] & Flags.NAMED:
-			return self.names[loc]
-		if self.flags[loc] & Flags.SREF:
-			return "S%04x" % (loc)
-		if self.flags[loc] & Flags.JREF:
-			return "L%04x" % (loc)
-		if self.flags[loc] & Flags.DREF:
-			if loc < 0x100:
-				return "Z%02x" % (loc)
+	def name(self, addr, use_default=False):
+		flags = self.flags[addr]
+		if flags & Flags.NAMED:
+			return self.names[addr]
+		if flags & Flags.WORD_HIGH:
+			return self.names[addr-1] + "_high"
+		if flags & Flags.SREF:
+			return "S%04x" % (addr)
+		if flags & Flags.JREF:
+			return "L%04x" % (addr)
+		if flags & Flags.DREF:
+			if addr < 0x100:
+				return "Z%02x" % (addr)
 			else:
-				return "D%04x" % (loc)
+				return "D%04x" % (addr)
 
 		if use_default:
-			return "X%04x" % (loc)
+			return "X%04x" % (addr)
 		return None
 
 	def name_relative(self, loc):
@@ -127,7 +132,10 @@ class Dis6502:
 	def trace_one_inst(self, addr):
 		# special case that we will always decode a BRK
 		opcode = self.ram[addr]
-		if self.flags[addr] & Flags.TDONE and opcode != 0:
+		if self.flags[addr] & Flags.TDONE:
+#			if opcode == 0 and self.flags[addr] & Flags.ISOP:
+#				pass
+#			else:
 			return None
 		self.flags[addr] |= Flags.TDONE
 		istart = addr
@@ -326,24 +334,32 @@ class Dis6502:
 			addr += len
 
 
-	def add_symbol(self, addr, name, data_type):
+	def add_symbol(self, addr, name, data_type, array_size):
 		self.save_name(addr, name, force=True)
 
-		if data_type is None:
-			pass
-		elif data_type == "func":
-			self.types[addr] = "func"
-			self.flags[addr] |= Flags.SREF
-		elif data_type == "byte":
-			self.types[addr] = "byte"
-			self.flags[addr] |= Flags.DREF
-		elif data_type == "word":
-			self.types[addr] = "word"
-			self.flags[addr] |= Flags.WORD_LOW | Flags.DREF
-			self.flags[addr+1] |= Flags.WORD_HIGH | Flags.DREF
-			self.save_name(addr + 1, name + "_high")
+		if array_size is None:
+			array_size = 1
+			array_flag = 0
 		else:
-			return None
+			array_flag = Flags.ARRAY
+			self.arrays[addr] = array_size
+
+		for i in range(0,array_size):
+			if data_type is None:
+				self.flags[addr+i] |= array_flag
+			elif data_type == "func":
+				self.types[addr+i] = "func"
+				self.flags[addr+i] |= Flags.SREF
+			elif data_type == "byte":
+				self.types[addr+i] = "byte"
+				self.flags[addr+i] |= Flags.DREF | array_flag
+			elif data_type == "word":
+				self.types[addr+i] = "word"
+				self.flags[addr+2*i] |= Flags.WORD_LOW | Flags.DREF | array_flag
+				self.flags[addr+2*i+1] |= Flags.WORD_HIGH | Flags.DREF | array_flag
+				#self.save_name(addr + 1, name + "_high")
+			else:
+				raise RuntimeError(f"unknown data type '{data_type}'")
 
 		return True
 	def load_symbols(self, filename):
@@ -352,11 +368,13 @@ class Dis6502:
 			while (line := f.readline()):
 				# address label optional-type
 				line_num += 1
-				words = line.rstrip().split(maxsplit=2)
+				words = line.rstrip().split()
 				addr = int(words[0], 16)
 				name = words[1]
+				data_type = words[2] if len(words) > 2 else None
+				array_size = int(words[3],0) if len(words) > 3 else None
 
-				if not self.add_symbol(addr, name, words[2] if len(words) > 2 else None):
+				if not self.add_symbol(addr, name, data_type, array_size):
 					raise RuntimeError(f"{filename}:{line_num}: Unknown type {words[2]}")
 					
 
