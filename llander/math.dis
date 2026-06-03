@@ -1,5 +1,5 @@
 .text
-<h2>16-bit Math</h2>
+## 16-bit Math
 The 6502 is an 8-bit CPU with 8-bit wide registers and an 8-bit wide data bus.
 There is no multiply instruction, so it is necessary to implement it in software.
 Some games, like BattleZone have a math coprocessor for doing 3D transforms, but
@@ -11,7 +11,7 @@ across all of the code in Lunar Lander.  However a 16-by-16 multiply needs more 
 so some temporary zero page locations are used.  The results are also left in
 zero page locations and can be used for chaning operations together.
 
-<h3>Minimum</h3>
+### Minimum
 
 As a warmup, here's a function that returns the minimum of two 16-bit values that are stored in global variables
 on the zero page:
@@ -64,7 +64,7 @@ ret:
 }
 </pre>
 
-<h3>Multiply</h3>
+### Multiply
 .func mult16
 70ef  8543    STA mult_a                 ; Store A into mult_a
 
@@ -101,9 +101,9 @@ ret:
 
 
 .text
-I'm not certain about some of these operations; it seems that the <tt>mult_acc</tt> field is never used after being zeroed
+I'm not certain about some of these operations; it seems that the @mult_acc field is never used after being zeroed
 and I wonder if it is left over from a prior implementation.  This code also causes a problem with the tracing disassembler
-since it appears that there is subroutine call to 0x711c, which is in the middle of an instruction.
+since it appears that there is subroutine call to @0x711c, which is in the middle of an instruction.
 
 In any event, this algorithm could be translate roughly to the C code:
 

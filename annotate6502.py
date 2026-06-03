@@ -116,7 +116,40 @@ class Annotator:
 		elif self.mode == "dis" or self.mode == "func" or self.mode == "label":
 			self.disassemble(line) #int(words[0],16), words[1:])
 		else:
-			print(line)
+			print(self.fake_markdown(line))
+
+	# apply some markdown like functions to the line
+	def fake_markdown(self, line):
+		def lookup_ref(m):
+			ref = m[1]
+			if re.match(r"^(0x)?[0-9A-Fa-f]+$", ref):
+				ref_addr = int(ref,16)
+			else:
+				ref_addr = self.dis.all_names.get(ref)
+			if not ref_addr:
+				raise RuntimeError(f"reference '@{ref}' not found")
+			ref_addr = "%04x" % (ref_addr)
+			return f"<a class=link href=#{ref_addr}>{ref}</a>"
+
+		# should also build a TOC while doing this...
+		line = re.sub(r'^####\s*(.*)$', r'<h4>\1</h4>', line)
+		line = re.sub(r'^###\s*(.*)$', r'<h3>\1</h4>', line)
+		line = re.sub(r'^##\s*(.*)$', r'<h2>\1</h4>', line)
+		line = re.sub(r'^#\s*(.*)$', r'<h1>\1</h4>', line)
+
+		# turn `foo` into fixed format
+		line = re.sub(r'`(.+?)`', r'<tt>\1</tt>', line)
+
+		# turn @foo into links to addresses or symbols
+		line = re.sub(r'@([^!,.\s]+)', lookup_ref, line)
+
+		# ![caption](image-link)
+		line = re.sub(r'^!\[(.*?)\]\((.*?)\)\s*$',
+			r'<a href="\2"><img src="\2" width=50% /></a>',
+			line
+		)
+
+		return line
 
 
 	def start_func(self, name):
@@ -203,7 +236,7 @@ class Annotator:
 		label_div = self.make_label(addr)
 		if comment:
 			self.dis.comments[addr] = comment
-			comment_div = f"\n\t<div class=comment>{comment}</div>"
+			comment_div = f"\n\t<div class=comment>{self.fake_markdown(comment)}</div>"
 		else:
 			comment_div = ""
 
@@ -249,7 +282,7 @@ class Annotator:
 		if len(words) > 2:
 			comment = ' '.join(words[2:])
 			self.dis.comments[addr] = comment
-			comment_div = f"\n\t<div class=comment>{comment}</div>"
+			comment_div = f"\n\t<div class=comment>{self.fake_markdown(comment)}</div>"
 		else:
 			comment_div = ""
 

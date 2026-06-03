@@ -1,10 +1,10 @@
 .text
-<h2 id="section-buttons">Cabinet buttons and lamps</h2>
+## Cabinet buttons and lamps
 
 The <a href="https://lakeside-arcade.com/2026/03/07/lunar-lander-pcb-repair-logs/">Lakeside Arcade - Lunar Lander PCB Repair Logs</a>
 has a helpful excerpt from the service manual showing the memory map for the arcade console:
 
-<img src="images/llander-buttons.png" alt="Memory map for the Lunar Lander 6502"/>
+![Memory map for the Lunar Lander 6502](images/llander-buttons.png)
 
 There are five buttons on the controls, Rotate Right, Rotate Left, Abort, Start and Select.
 These are all memory mapped into the 6502's address space and set bit 7 in the byte

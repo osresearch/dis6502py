@@ -4,6 +4,7 @@ html {
 	font-size: 20px;
 	color: #fff;
 }
+h2 { padding-top: 2em; text-decoration: underline; }
 .addr, .bytes, .data, .instr, .label, .data_label, .func, .hexdump, .xref, .comment {
 	color: #00ff00;
 	display: inline-block;

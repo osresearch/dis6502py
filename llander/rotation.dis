@@ -7,11 +7,11 @@ that reads the player's rotation buttons.
 .func IO_read_rotate_buttons
 6404  a200    LDX #$00                   ; X = 0
 6406  2c0624  BIT IO_in1_yaw_right       ; Read the right button from the IO port
-6409  1001    BPL not_right              ; If bit 7 is not set, Button is not pressed, jump to @L640c
+6409  1001    BPL not_right              ; If bit 7 is not set, Button is not pressed, jump to @0x640c
 640b  ca      DEX                        ; X = X - 1
 .label not_right
 640c  2c0724  BIT IO_in1_yaw_left        ; Read the left button from the IO port
-640f  1001    BPL not_left               ; Button is not pressed, jump to @L6412
+640f  1001    BPL not_left               ; Button is not pressed, jump to @0x6412
 6411  e8      INX                        ; X = X + 1
 .label not_left
 6412  8a      TXA                        ; A = X
@@ -73,15 +73,15 @@ functions.  Let's look at that first one since it's "easier":
 
 
 .text
-Note that the last instruction in the function is a <tt>BNE</tt>, even though a constant non-zero value has just
-been loaded into <tt>Y</tt>, so it becomes an always-taken relative jump.  This is one byte shorter than
-the equivilant <tt>JMP</tt> instruction.
+Note that the last instruction in the function is a `BNE`, even though a constant non-zero value has just
+been loaded into `Y`, so it becomes an always-taken relative jump.  This is one byte shorter than
+the equivilant `JMP` instruction.
 
 .func rts_63d3
 63d3  60      RTS                        ; Shared RTS instruction used by several functions
 
 .text
 Another way that programmers saved memory was by reusing instructions across different functions.
-The "function" at @63d3 is a single <tt>RTS</tt> instruction that other nearby functions use
-instead of having their own <tt>RTS</tt>.  This complicates the control-flow analysis of tools
+The "function" at @63d3 is a single `RTS` instruction that other nearby functions use
+instead of having their own `RTS`.  This complicates the control-flow analysis of tools
 like ghidra and sometimes requires manual annotation to decompile.
