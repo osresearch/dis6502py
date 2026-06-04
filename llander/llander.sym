@@ -3,7 +3,7 @@
 0002 ship_angle_modulo
 0003 yaw_rate
 0005 yaw_rate_maybe
-0007 ship_pos
+0007 ship_pos word 2
 000b thrust_mode_maybe
 000d vec_letter_ptr_maybe
 000f score_dec_maybe
@@ -50,11 +50,9 @@
 0056 ship_abort
 0057 ship_enable_y
 0058 ship_accel byte 2
+005a ship_vel_sign_x
 005d ship_state_maybe
-005e ship_vel_x
-005f ship_pos_x
-0060 ship_vel_y
-0061 ship_pos_y
+005e ship_vel word 2
 0062 touchdown_velocities_maybe
 0063 gravity
 0064 VecPtr
@@ -266,14 +264,14 @@
 6c6a ship_update_loop
 6c8c skip_zoom
 6ca0 skip_physics
-6ca9 L6ca9
-6cd9 L6cd9
+6ca9 no_gravity
+6cd9 add_thrust_to_vel
 6cee ship_update_done
 6cef get_next_5bits func
 6cfe add16_signed_mag func
 6d00 add16_signed_mag_arg1 func
-6d02 add16_signed_mag_arg1_short func
-6d04 add16_signed_magnitude_core func
+6d02 add16_signed_mag_arg1_low func
+6d04 add16_signed_mag_core func
 6d25 return_delta1_sign
 6d27 return_delta1
 6d2c opposite_underflow
