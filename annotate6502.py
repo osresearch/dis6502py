@@ -152,7 +152,13 @@ class Annotator:
 
 		# ![caption](image-link)
 		line = re.sub(r'^!\[(.*?)\]\((.*?)\)\s*$',
-			r'<a href="\2"><img src="\2" width=50% /></a>',
+			r'<a href="\2"><img src="\2" width=50% alt="\1"/></a>',
+			line
+		)
+
+		# [text](link)
+		line = re.sub(r'\[(.*?)\]\((.*?)\)',
+			r'<a href="\2">\1</a>',
 			line
 		)
 
