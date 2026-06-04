@@ -37,7 +37,6 @@
 0042 mult_y
 0043 mult_a
 0044 mult_acc word
-0045 mult_acc_high word
 0046 ship_accel_sign byte 2
 0048 delta2 word
 004a delta1 word
