@@ -2,12 +2,12 @@ all: llander.sym llander.asm
 
 llander.sym: FORCE
 	../annotate6502.py \
-		header.dis \
-		buttons.dis \
-		rotation.dis \
-		math.dis \
-		zeropage.dis \
-		footer.dis \
+		index.md \
+		buttons.md \
+		rotation.md \
+		math.md \
+		zeropage.md \
+		footer.md \
 		> index.html
 
 llander.asm: llander.sym

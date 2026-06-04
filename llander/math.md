@@ -39,7 +39,7 @@ on the zero page:
 To translate this into C with the same logic flow is not very idomatic, but hopefully makes it easier to see how it maps
 to the 8-bit math of the assembly:
 
-```C
+<pre>
 uint8_t a_high, a_low;
 uint8_t b_high, b_low;
 uint16_t min16(void)
@@ -63,7 +63,7 @@ uint16_t min16(void)
 ret:
 	return a << 8 | x;
 }
-```
+</pre>
 
 ### Multiply
 
