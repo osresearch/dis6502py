@@ -351,7 +351,6 @@ class Dis6502:
 			array_size = 1
 			array_flag = 0
 		else:
-			print(f"{name} array size {array_size}", file=sys.stderr)
 			array_flag = Flags.ARRAY
 			self.arrays[addr] = array_size | 0x10000
 

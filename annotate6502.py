@@ -31,6 +31,8 @@ class Annotator:
 		self.filename = None
 		self.symbols_filename = None
 		self.last_name = None
+		self.block_comment = ''
+		self.block_comments = {}
 
 	def warn(self, s):
 		print(f"{self.filename}:{self.line_num}: {'%04x' % (self.addr if self.addr else 0x0)} {s}", file=sys.stderr)
@@ -103,6 +105,8 @@ class Annotator:
 			self.dump(words[1])
 
 		# formatting commands
+		elif words[0] == ';':
+			self.block_comment += self.fake_markdown(line) + "<br/>\n"
 		elif words[0] == ".func":
 			self.start_func(words[1])
 		elif words[0] == ".label":
@@ -199,7 +203,7 @@ class Annotator:
 		comment = m[4]
 
 		# if we are in function or label mode, this new address
-		# is gets a new name
+		# is gets a new name.
 		if self.mode == "func" or self.mode == "label":
 			self.dis.save_name(addr, self.last_name, force=True)
 			if self.mode == "func":
@@ -227,6 +231,9 @@ class Annotator:
 	def disassemble_instr(self, addr, comment):
 		# disassemble the instruction and hyperlink the destination if there is one
 		(fmt,op_name,operand) = self.dis.dis_instr(addr)
+		comment_div = ""
+		block_comment_div = ""
+
 		if not op_name:
 			instr = fmt
 		else:
@@ -237,13 +244,17 @@ class Annotator:
 		if comment:
 			self.dis.comments[addr] = comment
 			comment_div = f"\n\t<div class=comment>{self.fake_markdown(comment)}</div>"
-		else:
-			comment_div = ""
+
+		if self.block_comment != '':
+			self.block_comments[addr] = self.block_comment
+			self.block_comment = ''
+		if addr in self.block_comments:
+			block_comment_div = f"\n\t<div class=block_comment>{self.block_comments[addr]}</div>"
 
 		addr_hex = "%04x" % (addr)
 		(len,hexdump) = self.dis.print_bytes(addr)
 
-		return f"""<div id={addr_hex}>{label_div}
+		return f"""<div id={addr_hex}>{block_comment_div}{label_div}
 	<div class=addr>{addr_hex}</div>
 	<div class=bytes>{hexdump}</div>
 	<div class=instr>{instr}</div>{comment_div}

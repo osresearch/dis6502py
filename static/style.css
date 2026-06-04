@@ -5,21 +5,23 @@ html {
 	color: #fff;
 }
 h2 { padding-top: 2em; text-decoration: underline; }
-.addr, .bytes, .data, .instr, .label, .data_label, .func, .hexdump, .xref, .comment {
+tt, .addr, .bytes, .data, .instr, .label, .data_label, .func, .hexdump, .xref {
 	color: #00ff00;
 	display: inline-block;
 }
+.comment { display: inline-block; width: 45em; }
 .addr { width: 4em; }
 .bytes { width: 6em; }
 .instr { width: 20em; }
 .data_label, .label, .func { padding-left: 8em; }
 .data_label { padding-top: 1em; }
-.func { padding-top: 1em; font-weight: bolder; }
+.func { padding-top: 0.5em; font-weight: bolder; }
 .data { width: 32em; }
 .link { color: #80ff00; }
 .xref { padding-left: 1em; padding-right: 1em; color: #808000; font-size: 14px; }
 .xref:visited { color: #660; }
-.comment { color: #fff; }
+.block_comment .comment { color: #fff; }
+.block_comment { padding-top: 1em; }
 a { text-decoration: none; }
 a:visited { color: #80ff00; }
 a:hover { color: #ffff00; }

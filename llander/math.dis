@@ -65,9 +65,12 @@ ret:
 </pre>
 
 ### Multiply
+; Multiply two 8-bit values in `A` and `Y`, returning a 16-bit value in `A:X`.
+; Falls through to @mult16_repeat
 .func mult16
-70ef  8543    STA mult_a                 ; Store A into mult_a
+70ef  8543    STA mult_a                 ; Store `A` into @mult_a for repeated calls to @mult16_repeat (which this now implicitly calls by falling through)
 
+; Multiply the 8-bit values in Y with the previously used value in A
 .func mult16_repeat
 70f1  8442    STY mult_y                 ; Store Y into mult_y
 70f3  a543    LDA mult_a                 ; Load mult_a...
