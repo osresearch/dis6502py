@@ -336,7 +336,7 @@ class Annotator:
 		addr_hex = "%04x" % (addr)
 
 		flags = self.dis.flags[addr]
-		data_type = self.dis.types.get(addr, "byte")
+		data_type = "word" if flags & (Flags.WORD_LOW | Flags.WORD_HIGH) else "byte"
 		array_len = self.dis.arrays.get(addr, 1) & 0xFFFF
 
 		if flags & Flags.LOADED:

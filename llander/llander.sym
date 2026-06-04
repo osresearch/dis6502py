@@ -37,7 +37,7 @@
 0042 mult_y
 0043 mult_a
 0044 mult_acc word
-0045 mult_acc_high
+0045 mult_acc_high word
 0046 ship_accel_sign byte 2
 0048 delta2 word
 004a delta1 word
@@ -46,18 +46,17 @@
 004e drawing_scale
 004f score_dec_something1
 0051 score_dec_something2
-0055 ship_enable_x
-0056 abort_triggered
+0055 ship_enable byte 2
 0057 ship_enable_y
 0058 ship_accel byte 2
 005a ship_vel_sign
 005d ship_v_or_h_vel_maybe
-005e ship_vel
+005e ship_vel word 2
 0062 touchdown_velocities_maybe
 0063 gravity
 0064 VecPtr
 0066 ship_angle word
-0067 ship_angle_high
+0067 ship_angle_high word
 0068 abort_debounce
 0073 dvg_delay_maybe
 0074 nmi_counter_74
@@ -66,9 +65,9 @@
 0077 remainder
 0078 dividend_working
 007d min16_a word
-007e min16_a_high
+007e min16_a_high word
 007f min16_b word
-0080 min16_b_high
+0080 min16_b_high word
 0082 thrust_delta_last_raw
 0083 thrust_high
 0084 thrust_delta
@@ -261,6 +260,12 @@
 6be0 score_add_landing_bonus func
 6c45 landing_bonus_amount
 6c68 ship_update func
+6c6a ship_update_loop
+6c8c L6c8c
+6ca0 skip_physics
+6ca9 L6ca9
+6cd9 L6cd9
+6cee ship_update_done
 6cef get_next_5bits func
 6cfe add16_signed_mag func
 6d00 add16_signed_mag_arg1 func

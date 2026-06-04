@@ -29,7 +29,6 @@ class Dis6502:
 	def __init__(self):
 		self.ram = bytearray(self.max_addr)
 		self.flags = [ Flags(0) for i in range(0,self.max_addr) ]
-		self.types = {}
 		self.names = {}
 		self.arrays = {}
 		self.all_names = {}
@@ -112,17 +111,28 @@ class Dis6502:
 		return "%04x" % (addr)
 
 	def array_ref(self, addr):
-		array_index = self.arrays[addr]
-		if array_index & 0x10000:
-			array_index = 0
-		array_start = addr - array_index
+		array_start = self.arrays[addr]
+		if array_start & 0x10000:
+			array_start = addr
+		array_index = addr - array_start
+		print("array %04x => %04x[%d]" % (addr, array_start, array_index), file=sys.stderr)
 		return (array_start,array_index)
 		
 	def name_array(self, addr):
 		# arrays always have names
 		(array_start,array_index) = self.array_ref(addr)
 		name = self.names[array_start]
-		return f"{name}[{array_index}]"
+
+		flags = self.flags[addr]
+		if flags & Flags.WORD_HIGH:
+			name += "_high"
+		if flags & (Flags.WORD_LOW | Flags.WORD_HIGH):
+			array_index //= 2
+
+		if array_index == 0:
+			return name
+		else:
+			return f"{name}[{array_index}]"
 		
 
 	def save_ref(self, refer, refee):
@@ -371,23 +381,22 @@ class Dis6502:
 			array_flag = Flags.ARRAY
 			self.arrays[addr] = array_size | 0x10000
 
-		for i in range(0,array_size):
-			if i != 0:
-				self.arrays[addr+i] = i
+		if data_type == "word":
+			array_size *= 2
 
-			if data_type is None:
-				self.flags[addr+i] |= array_flag
-			elif data_type == "func":
-				self.types[addr+i] = "func"
-				self.flags[addr+i] |= Flags.SREF
-			elif data_type == "byte":
-				self.types[addr+i] = "byte"
+		for i in range(0,array_size):
+			if i == 0:
+				pass
+			else:
+				self.arrays[addr+i] = addr
+
+			if data_type is None or data_type == "byte":
 				self.flags[addr+i] |= Flags.DREF | array_flag
+			elif data_type == "func":
+				self.flags[addr+i] |= Flags.SREF
 			elif data_type == "word":
-				self.types[addr+2*i] = "word"
-				self.flags[addr+2*i] |= Flags.WORD_LOW | Flags.DREF | array_flag
-				self.flags[addr+2*i+1] |= Flags.WORD_HIGH | Flags.DREF | array_flag
-				#self.save_name(addr + 1, name + "_high")
+				self.flags[addr+i] |= Flags.DREF | array_flag \
+					| (Flags.WORD_HIGH if i % 2 else Flags.WORD_LOW)
 			else:
 				raise RuntimeError(f"unknown data type '{data_type}'")
 
