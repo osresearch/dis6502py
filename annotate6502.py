@@ -6,6 +6,7 @@ import os
 import sys
 import re
 from dis6502 import Dis6502, Flags
+from opcodes import opcode_table, OpcodeFlags
 
 header = """<!doctype html>
 <html><head>
@@ -234,14 +235,25 @@ class Annotator:
 		comment_div = ""
 		block_comment_div = ""
 
-		if not op_name:
-			instr = fmt
-		else:
+		instr = fmt
+		if op_name:
 			if self.dis.flags[operand] & Flags.ARRAY:
 				(operand,_) = self.dis.array_ref(operand)
 			elif self.dis.flags[operand] & Flags.WORD_HIGH:
 				operand -= 1
-			op_name = "<a class=link href=#%04x>%s</a>" % (operand,op_name)
+
+			# for branches, add an arrow for the direction
+			opflags = opcode_table[self.dis.ram[addr]].flags
+			if not opflags & (OpcodeFlags.FORK | OpcodeFlags.JUMP):
+				arrow = ""
+			elif operand > addr:
+				arrow = "&darr;"
+			elif operand < addr:
+				arrow = "&uarr;"
+			else:
+				arrow = "&olarr"
+
+			op_name = "<a class=link href=#%04x>%s%s</a>" % (operand,op_name, arrow)
 			instr = fmt % (op_name)
 
 		label_div = self.make_label(addr)
