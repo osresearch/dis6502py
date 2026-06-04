@@ -111,14 +111,31 @@ class Dis6502:
 				return "%s+%x" % (self.name(i), addr - i)
 		return "%04x" % (addr)
 
-	def name_array(self, addr):
+	def array_ref(self, addr):
 		array_index = self.arrays[addr]
+		if array_index & 0x10000:
+			array_index = 0
 		array_start = addr - array_index
+		return (array_start,array_index)
+		
+	def name_array(self, addr):
+		# arrays always have names
+		(array_start,array_index) = self.array_ref(addr)
 		name = self.names[array_start]
 		return f"{name}[{array_index}]"
 		
 
 	def save_ref(self, refer, refee):
+		if not refee in self.refs:
+			self.refs[refee] = []
+		self.refs[refee].append(refer)
+
+		# check for an array reference
+		if not self.flags[refee] & Flags.ARRAY:
+			return
+		(refee,array_index) = self.array_ref(refee)
+		if array_index == 0:
+			return
 		if not refee in self.refs:
 			self.refs[refee] = []
 		self.refs[refee].append(refer)

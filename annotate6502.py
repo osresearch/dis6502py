@@ -78,12 +78,12 @@ class Annotator:
 		words = line.split()
 		if len(words) == 0:
 			if self.mode == "text":
-				print("<br/>")
+				print("<p>")
 		elif words[0] == ".title":
 			self.title = ' '.join(words[1:])
 		elif words[0] == ".text":
 			self.mode = "text"
-			print("<br/>")
+			print("<br/><p>")
 		elif words[0] == ".header":
 			print(header % (self.title))
 		elif words[0] == ".footer":
@@ -237,6 +237,8 @@ class Annotator:
 		if not op_name:
 			instr = fmt
 		else:
+			if self.dis.flags[operand] & Flags.ARRAY:
+				(operand,_) = self.dis.array_ref(operand)
 			op_name = "<a class=link href=#%04x>%s</a>" % (operand,op_name)
 			instr = fmt % (op_name)
 

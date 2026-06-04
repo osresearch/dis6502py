@@ -142,6 +142,10 @@ The @mult16 function is used to compute the ship's X and Y acceleration based on
 a thrust-to-force lookup table, and then multiplying by the sine and cosine of the ship's angle to
 rotate the force into the screen coordinate frame.
 
+; Update the ship's acceleration in the screen reference frame
+; Compute sin and cos of the ship's angle and multiplies the
+; current thrust setting to get the X and Y acceleration.
+; Also computes the sign bit for these accelerations
 .func ship_compute_accel_xy:
 6b32  a502    LDA ship_angle_modulo      ; Read the reduced ship's angle (updated by @ship_command_yaw_easy )
 6b34  4a      LSR                        ; This is 0-31, where 0 is horizontal facing right, 8 is vertical,
@@ -174,10 +178,11 @@ rotate the force into the screen coordinate frame.
 6b66  a637    LDX GenByte_0037           ;
 6b68  bde976  LDA sine_table,X           ;
 6b6b  20ef70  JSR mult16                 ;
-6b6e  8559    STA Z59                    ;
+6b6e  8559    STA ship_accel[1]          ;
 6b70  60      RTS                        ;
 
-.byte 46 ship_accel_sign 2 ; The X direction and Y direction of the current ship angle
+.byte 58 ship_accel 2 ; The X and Y acceleration magnitudes for the ship's thrust
+.byte 46 ship_accel_sign 2 ; The sign bits for the X and Y accelerations
 .byte 76f2 sine_quadrants 4 ; Define the quadrants
 .byte 76f6 thrust_to_acc 16 ; How much acceleration comes from the different thrust levels
 .byte 76e9 sine_table 9 ; Reduced sine table for 0-45 degrees
