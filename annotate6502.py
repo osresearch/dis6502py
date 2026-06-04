@@ -130,7 +130,7 @@ class Annotator:
 			if re.match(r"^(0x)?[0-9A-Fa-f]+$", ref):
 				ref_addr = int(ref,16)
 			else:
-				ref_addr = self.dis.all_names.get(ref)
+				ref_addr = self.dis.all_names.get(ref,[None])[0]
 			if not ref_addr:
 				raise RuntimeError(f"reference '@{ref}' not found")
 			ref_addr = "%04x" % (ref_addr)
@@ -206,7 +206,7 @@ class Annotator:
 		# if we are in function or label mode, this new address
 		# is gets a new name.
 		if self.mode == "func" or self.mode == "label":
-			self.dis.save_name(addr, self.last_name, force=True)
+			self.dis.save_name(addr, self.last_name, self.mode, force=True)
 			if self.mode == "func":
 				self.dis.flags[addr] |= Flags.SREF;
 			self.mode = "dis"
@@ -229,11 +229,28 @@ class Annotator:
 
 		print(self.disassemble_instr(addr, comment))
 
+	def make_address_div(self, addr, interior):
+		label_div = self.make_label(addr)
+		comment_div = ""
+		block_comment_div = ""
+
+		if comment := self.dis.comments.get(addr):
+			comment_div = f"\n\t<div class=comment>{self.fake_markdown(comment)}</div>"
+
+		if comment := self.block_comments.get(addr):
+			block_comment_div = f"\n\t<div class=block_comment>{comment}</div>"
+
+		addr_hex = "%04x" % (addr)
+
+		return f"""
+	<div id={addr_hex}>{block_comment_div}{label_div}
+		<div class=addr>{addr_hex}</div>
+		{interior}{comment_div}
+	</div>"""
+
 	def disassemble_instr(self, addr, comment):
 		# disassemble the instruction and hyperlink the destination if there is one
 		(fmt,op_name,operand) = self.dis.dis_instr(addr)
-		comment_div = ""
-		block_comment_div = ""
 
 		instr = fmt
 		if op_name:
@@ -256,25 +273,18 @@ class Annotator:
 			op_name = "<a class=link href=#%04x>%s%s</a>" % (operand,op_name, arrow)
 			instr = fmt % (op_name)
 
-		label_div = self.make_label(addr)
-		if comment:
-			self.dis.comments[addr] = comment
-			comment_div = f"\n\t<div class=comment>{self.fake_markdown(comment)}</div>"
-
 		if self.block_comment != '':
 			self.block_comments[addr] = self.block_comment
 			self.block_comment = ''
-		if addr in self.block_comments:
-			block_comment_div = f"\n\t<div class=block_comment>{self.block_comments[addr]}</div>"
+		if comment:
+			self.dis.comments[addr] = comment
 
-		addr_hex = "%04x" % (addr)
-		(len,hexdump) = self.dis.print_bytes(addr)
+		(_,hexdump) = self.dis.print_bytes(addr)
 
-		return f"""<div id={addr_hex}>{block_comment_div}{label_div}
-	<div class=addr>{addr_hex}</div>
+		return self.make_address_div(addr, f"""
 	<div class=bytes>{hexdump}</div>
-	<div class=instr>{instr}</div>{comment_div}
-</div>"""
+	<div class=instr>{instr}</div>"""
+		)
 
 	def save_symbols(self):
 		if not self.symbols_filename:
@@ -299,7 +309,10 @@ class Annotator:
 					data_type = ""
 
 				if flags & Flags.ARRAY:
-					array_size = " %d" % (self.dis.arrays[addr] & 0xFFFF)
+					array_size = self.dis.arrays[addr]
+					if array_size & 0x10000 == 0:
+						raise RuntimeError("%s %04x: named memory in array?" % (name, addr))
+					array_size = " %d" % (array_size & 0xFFFF)
 					if data_type == "":
 						data_type = " byte"
 				else:
@@ -320,12 +333,14 @@ class Annotator:
 		comment = m[4]
 		self.dis.add_symbol(addr, name, data_type, array_len)
 
+		if self.block_comment != '':
+			self.block_comments[addr] = self.block_comment
+			self.block_comment = ''
+
 		(data_len,div) = self.print_data(addr, comment)
 		print(div)
 
 	def print_data(self, addr, comment):
-		label_div = self.make_label(addr)
-		comment_div = ""
 		array_text = ""
 		hexdump = ""
 
@@ -352,10 +367,7 @@ class Annotator:
 			array_text = "[%d]" % (array_len)
 
 		data_size = array_len * (2 if data_type == "word" else 1)
-		return (data_size, f"""<div id={addr_hex}>{label_div}
-	<div class=addr>{addr_hex}</div>
-	<div class=hexdump>.{data_type}{array_text}{hexdump}</div>{comment_div}
-</div>""")
+		return (data_size, self.make_address_div(addr, f"""<div class=hexdump>.{data_type}{array_text}{hexdump}</div>"""))
 
 	# produce a consolidated dump (along with stats)
 	def dump(self, filename):

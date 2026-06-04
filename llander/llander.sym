@@ -46,12 +46,15 @@
 004e drawing_scale
 004f score_dec_something1
 0051 score_dec_something2
-0055 ship_enable byte 2
+0055 ship_enable_x
+0056 ship_abort
 0057 ship_enable_y
 0058 ship_accel byte 2
-005a ship_vel_sign
-005d ship_v_or_h_vel_maybe
-005e ship_vel word 2
+005d ship_state_maybe
+005e ship_vel_x
+005f ship_pos_x
+0060 ship_vel_y
+0061 ship_pos_y
 0062 touchdown_velocities_maybe
 0063 gravity
 0064 VecPtr
@@ -261,7 +264,7 @@
 6c45 landing_bonus_amount
 6c68 ship_update func
 6c6a ship_update_loop
-6c8c L6c8c
+6c8c skip_zoom
 6ca0 skip_physics
 6ca9 L6ca9
 6cd9 L6cd9

@@ -69,15 +69,28 @@ class Dis6502:
 	def read16(self, i):
 		return self.ram[i+1] << 8 | self.ram[i]
 
-	def save_name(self, addr, name, force=False):
-		if addr in self.names and not force:
-			return
+	# Returns true if the name was saved, false if it already exists
+	def save_name(self, addr, name, data_type=None, array_size=None, force=False):
+		# force a rename
+		if old_name := self.names.get(addr) and not force:
+			if old_name != name:
+				print("%04x: Not renaming to %s from %s" % (addr, name, old_name), file=sys.stderr)
+			return False
 		self.flags[addr] |= Flags.NAMED
 		self.names[addr] = name
-		prev_addr = self.all_names.get(name)
-		if prev_addr and prev_addr != addr:
-			raise RuntimeError("%04x: name '%s' already in use at %04x" % (addr, name, prev_addr))
-		self.all_names[name] = addr
+
+		old_data = self.all_names.get(name)
+		if not old_data:
+			self.all_names[name] = [addr, data_type, array_size]
+			return True
+
+		if old_data[0] != addr \
+		or (old_data[1] and old_data[1] != data_type) \
+		or old_data[2] != array_size:
+			raise RuntimeError(f"Refusing to redefine {name}. Delete from symbol table" + str(old_data))
+
+		# already exists, do not recreate
+		return False
 
 	def name(self, addr, use_default=False):
 		flags = self.flags[addr]
@@ -115,7 +128,6 @@ class Dis6502:
 		if array_start & 0x10000:
 			array_start = addr
 		array_index = addr - array_start
-		print("array %04x => %04x[%d]" % (addr, array_start, array_index), file=sys.stderr)
 		return (array_start,array_index)
 		
 	def name_array(self, addr):
@@ -153,7 +165,7 @@ class Dis6502:
 	def start_trace(self, loc, name):
 		print("Trace: %04x %s" % (loc, name), file=sys.stderr)
 		self.flags[loc] |= Flags.SREF
-		self.save_name(loc, name)
+		self.save_name(loc, name, "func", force=True)
 		self.refs[loc] = []
 		self.add_trace(loc)
 
@@ -370,9 +382,10 @@ class Dis6502:
 			print(text)
 			addr += len
 
-
+	# Returns false if the symbol failed to be added (but true if it already exists)
 	def add_symbol(self, addr, name, data_type, array_size):
-		self.save_name(addr, name, force=True)
+		if not self.save_name(addr, name, data_type, array_size, force=True):
+			return True
 
 		if array_size is None:
 			array_size = 1
@@ -385,17 +398,23 @@ class Dis6502:
 			array_size *= 2
 
 		for i in range(0,array_size):
+			el_addr = addr + i
 			if i == 0:
 				pass
+			elif array_flag:
+				if el_addr in self.arrays or el_addr in self.names:
+					raise RuntimeError("%04x %s %d: overlaps existing variable at %04x?" % (addr, name, array_size, el_addr))
+				self.arrays[el_addr] = addr
 			else:
-				self.arrays[addr+i] = addr
+				if self.flags[el_addr] & Flags.ARRAY:
+					raise RuntimeError("%04x %s %d: overlaps existing array at %04x?" % (el_addr, name, array_size, self.arrays[el_addr]))
 
 			if data_type is None or data_type == "byte":
-				self.flags[addr+i] |= Flags.DREF | array_flag
+				self.flags[el_addr] |= Flags.DREF | array_flag
 			elif data_type == "func":
-				self.flags[addr+i] |= Flags.SREF
+				self.flags[el_addr] |= Flags.SREF
 			elif data_type == "word":
-				self.flags[addr+i] |= Flags.DREF | array_flag \
+				self.flags[el_addr] |= Flags.DREF | array_flag \
 					| (Flags.WORD_HIGH if i % 2 else Flags.WORD_LOW)
 			else:
 				raise RuntimeError(f"unknown data type '{data_type}'")
