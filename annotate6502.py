@@ -82,9 +82,9 @@ class Annotator:
 				print("<p>")
 		elif words[0] == ".title":
 			self.title = ' '.join(words[1:])
-		elif words[0] == ".text":
-			self.mode = "text"
-			print("<br/><p>")
+#		elif words[0] == ".text":
+#			self.mode = "text"
+#			print("<br/><p>")
 		elif words[0] == ".header":
 			print(header % (self.title))
 		elif words[0] == ".footer":
@@ -106,6 +106,8 @@ class Annotator:
 			self.dump(words[1])
 
 		# formatting commands
+		elif words[0].startswith("```"):
+			self.mode = "text" if self.mode != "text" else "code"
 		elif words[0] == ';':
 			self.block_comment += self.fake_markdown(line) + "<br/>\n"
 		elif words[0] == ".func":

@@ -1,9 +1,9 @@
-.text
-<h2 id=section_rotation>Ship rotation</h2>
+## Ship rotation
 
 The first function we're going to look at to keep things simple is the one
 that reads the player's rotation buttons.
 
+```
 .func IO_read_rotate_buttons
 6404  a200    LDX #$00                   ; X = 0
 6406  2c0624  BIT IO_in1_yaw_right       ; Read the right button from the IO port
@@ -16,8 +16,8 @@ that reads the player's rotation buttons.
 .label not_left
 6412  8a      TXA                        ; A = X
 6413  60      RTS                        ; Return 0 if neither or both buttons are pessed, -1 for right, +1 for left
+```
 
-.text
 This could also be rewritten into something like C:
 
 <pre>
@@ -39,6 +39,7 @@ rotation is to the left.
 Based on the cross references, we can see that this function is called by the @ship_command_yaw and @ship_command_yaw_easy
 functions.  Let's look at that first one since it's "easier":
 
+```
 .func ship_command_yaw_easy
 63d4  2497    BIT fuel_state             ; Read the fuel variable
 63d6  10fb    BPL rts_63d3               ; If bit 8 is not set (no fuel) jump to the shared RTS
@@ -69,18 +70,17 @@ functions.  Let's look at that first one since it's "easier":
 63fe  a200    LDX #$00                   ; Pass a 16-bit BCD value 0x0600 to
 6400  a006    LDY #$06                   ; the fuel drain wrapper
 6402  d05d    BNE fuel_drain_wrapper     ; (Always taken)
+```
 
-
-
-.text
 Note that the last instruction in the function is a `BNE`, even though a constant non-zero value has just
 been loaded into `Y`, so it becomes an always-taken relative jump.  This is one byte shorter than
 the equivilant `JMP` instruction.
 
+```
 .func rts_63d3
 63d3  60      RTS                        ; Shared RTS instruction used by several functions
+```
 
-.text
 Another way that programmers saved memory was by reusing instructions across different functions.
 The "function" at @63d3 is a single `RTS` instruction that other nearby functions use
 instead of having their own `RTS`.  This complicates the control-flow analysis of tools

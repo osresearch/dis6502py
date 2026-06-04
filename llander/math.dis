@@ -1,4 +1,3 @@
-.text
 ## 16-bit Math
 The 6502 is an 8-bit CPU with 8-bit wide registers and an 8-bit wide data bus.
 There is no multiply instruction, so it is necessary to implement it in software.
@@ -16,6 +15,7 @@ zero page locations and can be used for chaning operations together.
 As a warmup, here's a function that returns the minimum of two 16-bit values that are stored in global variables
 on the zero page:
 
+```asm
 .func min16
 72fe  a0ff    LDY #$ff                   ; Not sure what Y is used for in the return result
 7300  a57e    LDA min16_a_high           ; Assume A is higher, load high byte AH into A
@@ -34,11 +34,12 @@ on the zero page:
 7318  a67f    LDX min16_b                ; and BL into X
 .label return_ax
 731a  60      RTS                        ; Return the 16-bit value in A:X
+```
 
-.text
 To translate this into C with the same logic flow is not very idomatic, but hopefully makes it easier to see how it maps
 to the 8-bit math of the assembly:
-<pre>
+
+```C
 uint8_t a_high, a_low;
 uint8_t b_high, b_low;
 uint16_t min16(void)
@@ -62,9 +63,11 @@ uint16_t min16(void)
 ret:
 	return a << 8 | x;
 }
-</pre>
+```
 
 ### Multiply
+
+```asm
 ; Multiply two 8-bit values in `A` and `Y`, returning a 16-bit value in `A:X`.
 ; Falls through to @mult16_repeat
 .func mult16
@@ -99,9 +102,9 @@ ret:
 7116  0a      ASL                        ; Multiply the low-byte of the result by 2
 7117  2645    ROL mult_acc_high          ; Multiply the high-byte by two, shifting in the carry
 7119  90e7    BCC mult_start_round       ; If this doesn't overflow, start another round
+```
 
 
-.text
 I'm not certain about some of these operations; it seems that the @mult_acc field is never used after being zeroed
 and I wonder if it is left over from a prior implementation.  This code also causes a problem with the tracing disassembler
 since it appears that there is subroutine call to @0x711c, which is in the middle of an instruction.  If the multiply
@@ -109,7 +112,7 @@ does overflow, a `BRK` instruction is triggered that should halt the game.
 
 In any event, this algorithm could be translate roughly to the C code:
 
-<pre>
+```C
 uint16_t mult16(uint8_t a, uint8_t y)
 {
 	uint8_t mult_acc = 0, mult_acc_high = 0;
@@ -132,16 +135,16 @@ uint16_t mult16(uint8_t a, uint8_t y)
 
 	return mult_acc_high << 8 | mult_acc;
 }
-</pre>
+```
 
 
 ### Trig
 
-.text
 The @mult16 function is used to compute the ship's X and Y acceleration based on the current thrust,
 a thrust-to-force lookup table, and then multiplying by the sine and cosine of the ship's angle to
 rotate the force into the screen coordinate frame.
 
+```
 ; Update the ship's acceleration in the screen reference frame
 ; Compute sin and cos of the ship's angle and multiplies the
 ; current thrust setting to get the X and Y acceleration.
@@ -180,12 +183,13 @@ rotate the force into the screen coordinate frame.
 6b6b  20ef70  JSR mult16                 ;
 6b6e  8559    STA ship_accel[1]          ;
 6b70  60      RTS                        ;
+```
 
+```
 .byte 76f2 sine_quadrants 4 ; Define the quadrants
 .byte 76f6 thrust_to_acc 16 ; How much acceleration comes from the different thrust levels
 .byte 76e9 sine_table 9 ; Reduced sine table for 0-45 degrees
-
-.text
+```
 
 ### 16-bit signed magnitude math
 
@@ -193,6 +197,7 @@ The core game update routine uses the 16-bit signed magnitude XY accelerations t
 the ship's velocity in the XY coordinate frame, which are then used to update the XY positions.
 Adding the values as part of the timestep update is implemented in this set of functions:
 
+```
 ; Update @delta1 with signed byte `Y` and 16-bit magnitude in `A:X`.
 ; Falls through...
 .func add16_signed_mag:
@@ -263,20 +268,20 @@ Adding the values as part of the timestep update is implemented in this set of f
 6d4c  a8      TAY                        ; in `A:Y`
 6d4d  b0d6    BCS return_delta1_sign     ; And return it with the same sign as @delta1
 
-
 .byte 4d delta1_sign ; Sign byte for the 16-bit @delta1
 .word 4a delta1 ; 16-bit magnitude for @add16_signed_mag
 .byte 4c delta2_sign ; Sign byte for the 16-bit @delta2
 .word 48 delta2 ; 16-bit magnitude for @add16_signed_mag
+```
 
 
-.text
 ### Ship state
 
 Most of the ship's state is stored in zeropage global variables.  These include the
 XY acceleration (stored as 17-bit signed magnitude), the velocity and position
 (stored as 9-bit signed magnitude?)
 
+```
 .byte 46 ship_accel_sign 2 ; The sign bits for the X and Y accelerations
 .byte 55 ship_enable_x ; Disable physics for the X and Y axes (bit 7)
 .byte 56 ship_abort ; Has the abort button been triggered?
@@ -293,14 +298,14 @@ XY acceleration (stored as 17-bit signed magnitude), the velocity and position
 
 .word 5e ship_vel 2 ; Ship horizontal X and Y
 .word 07 ship_pos 2 ; Ship position 16-bit
+```
 
-.text
 ### Ship Update
 
 Now that we have the math functions for computing signed magnitude addition and transforming
 the thrust vectors into the XY screen coordinate frame, we can finally update the ship's position.
 
-
+```
 ; Update ship acceleration, velocity and position in the XY frame once per clock tick
 ;
 ; The 16-bit velocity is normally divided by 256, but if the screen is zoomed in
@@ -399,4 +404,4 @@ the thrust vectors into the XY screen coordinate frame, we can finally update th
 6ceb  4c6a6c  JMP ship_update_loop       ; If not make another pass through the loop
 .label ship_update_done:
 6cee  60      RTS                        ; Ship position and velocity updated.  Return!
-
+```

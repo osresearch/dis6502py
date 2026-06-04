@@ -1,10 +1,10 @@
-.text
 ## Zero Page data
 
 On the 6502 global variables are often stored on the "zero page" since it is possible to reference
 the bottom 256 bytes of memory with shorter instruction sequences.  It is initialized to zero or
 a static value in the @RESET code.
 
+```
 .byte 02 ship_angle_modulo			; Ship angle mod 90 degrees, from 0 - 31.
 .byte 42 mult_y					; Argument 1 to multiply
 .byte 43 mult_a					; Argument 2 to multiply
@@ -13,4 +13,4 @@ a static value in the @RESET code.
 .word 7d min16_a				; Arg 1 for min16
 .word 7f min16_b				; Arg 2 for min16
 .byte 97 fuel_state				; Bitmask of 0x80 = have fuel, 0x40 = out of fuel, 0 = not playing
-
+```
