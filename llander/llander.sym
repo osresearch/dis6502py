@@ -5,7 +5,7 @@
 0005 yaw_slow
 0006 yaw_nonzero
 0007 ship_pos word 2
-000b thrust_mode_maybe
+000b thrust_value
 000d vec_letter_ptr_maybe
 000f score_dec_maybe
 0019 ThisDebrisX
@@ -59,8 +59,8 @@
 0066 ship_angle word
 0067 ship_angle_high word
 0068 abort_debounce
-0073 dvg_delay_maybe
-0074 nmi_counter_74
+0073 dvg_timer
+0074 nmi_counter
 0075 divisor
 0076 divisor2
 0077 remainder
@@ -71,7 +71,7 @@
 0080 min16_b_high word
 0082 thrust_delta_last_raw
 0083 thrust_high
-0084 thrust_delta
+0084 thrust_low
 0085 thrust_something_counter
 0086 FrameCounter
 0087 nmi_counter_250
@@ -196,6 +196,11 @@
 640c not_right
 6412 not_left
 6414 thrust_smoothing_maybe func
+641c L641c
+6444 L6444
+6456 L6456
+645e L645e
+6460 L6460
 6461 fuel_drain_16 func
 6463 fuel_drain func
 647b low_fuel
@@ -378,7 +383,22 @@
 7a4f WriteText func
 7aa7 rts_7aa7 func
 7aa8 NMI_handler func
+7aae nmi_thrust_process
+7aba thrust_higher
+7ac2 thrust_lower
+7acc L7acc
+7ad2 L7ad2
+7ad6 nmi_check_dvg
 7aeb wait_for_watchdog
+7aee nmi_check_coins
+7af9 L7af9
+7afd L7afd
+7b16 L7b16
+7b2b L7b2b
+7b33 L7b33
+7b41 L7b41
+7b46 L7b46
+7b50 nmi_rti
 7b57 DrawNumber_2_no_leading_zero func
 7b59 DrawNumber_no_leading_zero func
 7b5a DrawNumber func
@@ -408,7 +428,7 @@
 7f17 DrawNumber_decimal_1 func
 7f2d font_fixup_0 func
 7f34 font_fixup_something
-7ffa NMI_vector
+7ffa NMI_vector word
 7ffc RESET_vector
 7ffe IRQ_vector
 fffa NMI

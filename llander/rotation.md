@@ -267,7 +267,7 @@ rotate the force into the screen coordinate frame.
 6b3e  8547    STA ship_accel_sign[1]     ; Store the Y acceleration sign bit
 6b40  a601    LDX actual_thrust_maybe    ;
 6b42  bdf676  LDA thrust_to_acc,X        ;
-6b45  850b    STA thrust_mode_maybe      ;
+6b45  850b    STA thrust_value           ;
 6b47  a502    LDA ship_angle_modulo      ; Get the ship's angle (0-31)
 6b49  290f    AND #$0f                   ; Get how far from horizontal it is (up or down)
 6b4b  c909    CMP #$09                   ; If it is 0-8, use the first half of the sine table
@@ -281,7 +281,7 @@ rotate the force into the screen coordinate frame.
 6b59  290f    AND #$0f                   ;
 6b5b  aa      TAX                        ;
 6b5c  bde976  LDA sine_table,X           ;
-6b5f  a40b    LDY thrust_mode_maybe      ;
+6b5f  a40b    LDY thrust_value           ;
 6b61  20ef70  JSR mult16                 ;
 6b64  8558    STA ship_accel             ;
 6b66  a637    LDX GenByte_0037           ;

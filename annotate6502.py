@@ -276,7 +276,7 @@ class Annotator:
 			elif operand < addr:
 				arrow = "&uarr;"
 			else:
-				arrow = "&olarr"
+				arrow = "&olarr;"
 
 			op_name = "<a class=link href=#%04x>%s%s</a>" % (operand,op_name, arrow)
 			instr = fmt % (op_name)

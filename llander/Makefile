@@ -8,6 +8,7 @@ llander.sym: FORCE
 		rotation.md \
 		thrust.md \
 		zeropage.md \
+		tick.md \
 		footer.md \
 		> index.html
 

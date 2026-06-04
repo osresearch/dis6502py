@@ -91,7 +91,7 @@ This is handled here:
 ; While the main engine is thrusting, fuel is drained based on the lever position
 .func fuel_drain_thrust:
 6b71  a9da    LDA #$da                   ; Default is to lose 218 fuel per thrust unit
-6b73  a40b    LDY thrust_mode_maybe      ; If thrust mode is negative
+6b73  a40b    LDY thrust_value           ; If thrust mode is negative
 6b75  3008    BMI fuel_thrust_multiply   ; then use the default
 6b77  a623    LDX mission_difficulty     ; Otherwise if the mission is
 6b79  e002    CPX #$02                   ; not equal to 2 ("Prime") with strong gravity
@@ -100,12 +100,12 @@ This is handled here:
 .label fuel_thrust_multiply:
 6b7f  20ef70  JSR mult16                 ; `A` = thrust cost `Y` = thrust setting
 6b82  aa      TAX                        ; Ignores the low bits, uses just the high byte of the result
-6b83  a000    LDY #$00                   ;
-6b85  8437    STY GenByte_0037           ;
-6b87  a007    LDY #$07                   ;
+6b83  a000    LDY #$00                   ; Only use the bits in `X`
+6b85  8437    STY GenByte_0037           ; So store 0 in gb37
+6b87  a007    LDY #$07                   ; 8 digits requested
 6b89  20c679  JSR dec_to_bcd             ; Converts the binary result to BCD
-6b8c  a8      TAY                        ; adjusts the calling convention
-6b8d  4c6164  JMP fuel_drain_16          ; and drains that much fuel (in BCD)
+6b8c  a8      TAY                        ; Return is in `Y:X:A`, but @fuel_drain_16 wants `X:Y`
+6b8d  4c6164  JMP fuel_drain_16          ; drains that much fuel (tail call)
 
 
 ; When the ship crashes, a random amount of fuel is lost
@@ -165,4 +165,60 @@ This is handled here:
 
 ### Thrust
 
+```
+.byte 0b thrust_value ; one of the 16 levels of thrust
+```
+
+```
+.func thrust_smoothing_maybe:
+6414  2422    BIT game_state_flags       ;
+6416  5004    BVC L641c                  ;
+6418  a556    LDA ship_abort             ;
+641a  d044    BNE L6460                  ;
+.label L641c:
+641c  a584    LDA thrust_low             ;
+641e  4a      LSR                        ;
+641f  4a      LSR                        ;
+6420  aa      TAX                        ;
+6421  4a      LSR                        ;
+6422  8537    STA GenByte_0037           ;
+6424  a000    LDY #$00                   ;
+6426  e482    CPX thrust_delta_last_raw  ;
+6428  b01a    BCS L6444                  ;
+642a  a584    LDA thrust_low             ;
+642c  38      SEC                        ;
+642d  e582    SBC thrust_delta_last_raw  ;
+642f  a00f    LDY #$0f                   ;
+6431  9011    BCC L6444                  ;
+6433  c537    CMP GenByte_0037           ;
+6435  900d    BCC L6444                  ;
+6437  a582    LDA thrust_delta_last_raw  ;
+6439  a484    LDY thrust_low             ;
+643b  20c070  JSR divide                 ;
+643e  8a      TXA                        ;
+643f  4a      LSR                        ;
+6440  4a      LSR                        ;
+6441  4a      LSR                        ;
+6442  4a      LSR                        ;
+6443  a8      TAY                        ;
+.label L6444:
+6444  8401    STY actual_thrust_maybe    ;
+6446  a000    LDY #$00                   ;
+6448  a585    LDA thrust_something_counter ;
+644a  c94b    CMP #$4b                   ;
+644c  9008    BCC L6456                  ;
+644e  e683    INC thrust_high            ;
+6450  c684    DEC thrust_low             ;
+6452  c684    DEC thrust_low             ;
+6454  8485    STY thrust_something_counter ;
+.label L6456:
+6456  2497    BIT fuel_state             ;
+6458  1004    BPL L645e                  ;
+645a  a522    LDA game_state_flags       ;
+645c  d002    BNE L6460                  ;
+.label L645e:
+645e  8401    STY actual_thrust_maybe    ;
+.label L6460:
+6460  60      RTS                        ; Return to caller
+```
 
