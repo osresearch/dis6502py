@@ -1,8 +1,9 @@
 0000 state_00
 0001 actual_thrust_maybe
 0002 ship_angle_modulo
-0003 yaw_rate
-0005 yaw_rate_maybe
+0003 yaw_rate word
+0005 yaw_slow
+0006 yaw_nonzero
 0007 ship_pos word 2
 000b thrust_mode_maybe
 000d vec_letter_ptr_maybe
@@ -175,8 +176,18 @@
 6313 fuel_increase_limit_9999 func
 632a fuel_per_coin_bcd_table
 633c ship_command_yaw func
-6389 yawing_left
+6341 not_aborting
+634a yaw_momentum
+636c set_yaw_slow
+636f yaw_rate_high_zero
+6373 yaw_check_fuel
+6389 yaw_cmd_left
+639c yaw_positive
+63a4 store_yaw_rate
 63ab no_yaw_command
+63b8 L63b8
+63c9 update_yaw_rate
+63cd update_yaw_nonzero
 63d3 rts_63d3 func
 63d4 ship_command_yaw_easy func
 63f6 cancel_rotation
