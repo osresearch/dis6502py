@@ -140,25 +140,25 @@ a thrust-to-force lookup table, and then multiplying by the sine and cosine of t
 rotate the force into the screen coordinate frame.
 
 .func ship_compute_accel_xy:
-6b32  a502    LDA ship_angle_modulo      ; Read the ship's angle in the quadrant
-6b34  4a      LSR                        ; >>
-6b35  4a      LSR                        ; >>
-6b36  4a      LSR                        ; Divide by 8
-6b37  aa      TAX                        ; Move this into X
-6b38  bdf276  LDA sine_quadrants,X       ;
-6b3b  8546    STA ship_accel_sign        ;
-6b3d  0a      ASL                        ;
-6b3e  8547    STA Z47                    ;
+6b32  a502    LDA ship_angle_modulo      ; Read the reduced ship's angle (updated by @ship_command_yaw_easy )
+6b34  4a      LSR                        ; This is 0-31, where 0 is horizontal facing right, 8 is vertical,
+6b35  4a      LSR                        ; 16 is horizontal facing left, 31 is straight down
+6b36  4a      LSR                        ; Divide this reduced angle by 8 to get the quadrant that it is in
+6b37  aa      TAX                        ;
+6b38  bdf276  LDA sine_quadrants,X       ; Read the quadrant bits (bit 7 = X direction, bit 6 = Y direction)
+6b3b  8546    STA ship_accel_sign        ; Cache the X direction in @ship_accel_sign[0]
+6b3d  0a      ASL                        ; Shift it left once
+6b3e  8547    STA ship_accel_sign[1]     ; Cache the Y direction in @ship_accel_sign[1]
 6b40  a601    LDX actual_thrust_maybe    ;
 6b42  bdf676  LDA thrust_to_acc,X        ;
 6b45  850b    STA thrust_mode_maybe      ;
-6b47  a502    LDA ship_angle_modulo      ;
-6b49  290f    AND #$0f                   ;
-6b4b  c909    CMP #$09                   ;
-6b4d  9004    BCC L6b53                  ;
-6b4f  490f    EOR #$0f                   ;
-6b51  6900    ADC #$00                   ;
-.label L6b53:
+6b47  a502    LDA ship_angle_modulo      ; Get the ship's angle (0-31)
+6b49  290f    AND #$0f                   ; Get how far from horizontal it is (up or down)
+6b4b  c909    CMP #$09                   ; If it is 0-8, use the first half of the sine table
+6b4d  9004    BCC flip_to_other_half     ; (
+6b4f  490f    EOR #$0f                   ; Invert the clamped angle, which flips it around 45 degrees
+6b51  6900    ADC #$00                   ; Why carry?
+.label flip_to_other_half:
 6b53  8537    STA GenByte_0037           ;
 6b55  4907    EOR #$07                   ;
 6b57  6901    ADC #$01                   ;
@@ -174,8 +174,9 @@ rotate the force into the screen coordinate frame.
 6b6e  8559    STA Z59                    ;
 6b70  60      RTS                        ;
 
+.byte 46 ship_accel_sign 2 ; The X direction and Y direction of the current ship angle
 .byte 76f2 sine_quadrants 4 ; Define the quadrants
-.byte 76e9 sine_table 9 ; Reduced sine table for 0-45 degrees
 .byte 76f6 thrust_to_acc 16 ; How much acceleration comes from the different thrust levels
+.byte 76e9 sine_table 9 ; Reduced sine table for 0-45 degrees
 .text
 

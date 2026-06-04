@@ -141,7 +141,7 @@ class Annotator:
 		line = re.sub(r'`(.+?)`', r'<tt>\1</tt>', line)
 
 		# turn @foo into links to addresses or symbols
-		line = re.sub(r'@([^!,.\s]+)', lookup_ref, line)
+		line = re.sub(r'@([^!()[,.\s]+)', lookup_ref, line)
 
 		# ![caption](image-link)
 		line = re.sub(r'^!\[(.*?)\]\((.*?)\)\s*$',
@@ -272,7 +272,7 @@ class Annotator:
 					data_type = ""
 
 				if flags & Flags.ARRAY:
-					array_size = " %d" % (self.dis.arrays[addr])
+					array_size = " %d" % (self.dis.arrays[addr] & 0xFFFF)
 					if data_type == "":
 						data_type = " byte"
 				else:
@@ -309,7 +309,7 @@ class Annotator:
 
 		flags = self.dis.flags[addr]
 		data_type = self.dis.types.get(addr, "byte")
-		array_len = self.dis.arrays.get(addr, 1)
+		array_len = self.dis.arrays.get(addr, 1) & 0xFFFF
 		if flags & Flags.LOADED:
 			hexdump = []
 			for i in range(0,array_len):
@@ -332,8 +332,12 @@ class Annotator:
 		with open(filename, "w") as f:
 			print(header % (self.title), file=f)
 			self.addr = 0
+
 			total_ops = 0
 			op_comments = 0
+			total_data = 0
+			data_comments = 0
+
 			while self.addr < self.dis.max_addr:
 				if self.dis.flags[self.addr] == 0:
 					self.addr += 1
@@ -354,12 +358,19 @@ class Annotator:
 					(data_len,div) = self.print_data(self.addr, comment)
 					print(div, file=f)
 					self.addr += data_len
+
+					# treat arrays as a single item
+					if comment and len(comment) > 1:
+						data_comments += 1
+					total_data += 1
 				else:
 					# TODO: handle data
 					self.addr += 1
+					total_data += 1
 			print(footer, file=f)
 
-		print("%d comments / %d ops %.2f%%" % (op_comments, total_ops, 100.0 * op_comments / total_ops), file=sys.stderr)
+		print("OPS %d comments / %d instructions %.2f%%" % (op_comments, total_ops, 100.0 * op_comments / total_ops), file=sys.stderr)
+		print("DAT %d comments / %d data bytes %.2f%%" % (data_comments, total_data, 100.0 * data_comments / total_data), file=sys.stderr)
 
 ann = Annotator()
 for file in sys.argv[1:]:

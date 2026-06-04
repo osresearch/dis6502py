@@ -84,6 +84,9 @@ class Dis6502:
 		flags = self.flags[addr]
 		if flags & Flags.NAMED:
 			return self.names[addr]
+		if flags & Flags.ARRAY:
+			# need to find the array this belongs to
+			return self.name_array(addr)
 		if flags & Flags.WORD_HIGH:
 			return self.names[addr-1] + "_high"
 		if flags & Flags.SREF:
@@ -100,13 +103,20 @@ class Dis6502:
 			return "X%04x" % (addr)
 		return None
 
-	def name_relative(self, loc):
-		for i in range(loc, loc-1024, -1):
+	def name_relative(self, addr):
+		for i in range(addr, addr-1024, -1):
 			if i < 0 or self.flags[i] == 0:
 				break
-			if self.flags[i] & (Flags.SREF):
-				return "%s+%x" % (self.name(i), loc - i)
-		return "%04x" % (loc)
+			if self.flags[i] & Flags.SREF:
+				return "%s+%x" % (self.name(i), addr - i)
+		return "%04x" % (addr)
+
+	def name_array(self, addr):
+		array_index = self.arrays[addr]
+		array_start = addr - array_index
+		name = self.names[array_start]
+		return f"{name}[{array_index}]"
+		
 
 	def save_ref(self, refer, refee):
 		if not refee in self.refs:
@@ -341,10 +351,14 @@ class Dis6502:
 			array_size = 1
 			array_flag = 0
 		else:
+			print(f"{name} array size {array_size}", file=sys.stderr)
 			array_flag = Flags.ARRAY
-			self.arrays[addr] = array_size
+			self.arrays[addr] = array_size | 0x10000
 
 		for i in range(0,array_size):
+			if i != 0:
+				self.arrays[addr+i] = i
+
 			if data_type is None:
 				self.flags[addr+i] |= array_flag
 			elif data_type == "func":
@@ -354,7 +368,7 @@ class Dis6502:
 				self.types[addr+i] = "byte"
 				self.flags[addr+i] |= Flags.DREF | array_flag
 			elif data_type == "word":
-				self.types[addr+i] = "word"
+				self.types[addr+2*i] = "word"
 				self.flags[addr+2*i] |= Flags.WORD_LOW | Flags.DREF | array_flag
 				self.flags[addr+2*i+1] |= Flags.WORD_HIGH | Flags.DREF | array_flag
 				#self.save_name(addr + 1, name + "_high")

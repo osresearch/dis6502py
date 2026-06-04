@@ -38,7 +38,7 @@
 0043 mult_a
 0044 mult_acc word
 0045 mult_acc_high
-0046 ship_accel_sign
+0046 ship_accel_sign byte 2
 0048 delta2
 004a delta1
 004c delta2_sign
@@ -255,7 +255,7 @@
 6af2 str_YOU_DESTROYED_A_100_MEGABUCK_LANDER
 6b1a str_NO_SURVIVORS
 6b32 ship_compute_accel_xy func
-6b53 L6b53
+6b53 flip_to_other_half
 6b71 fuel_drain_thrust func
 6b90 fuel_lost_to_crash func
 6be0 score_add_landing_bonus func
