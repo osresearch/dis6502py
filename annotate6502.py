@@ -175,11 +175,11 @@ class Annotator:
 			return ''
 
 		flags = self.dis.flags[addr]
-		div_class = "label"
+		div_class = "data_label"
 		if flags & Flags.SREF:
 			div_class = "func"
-		elif flags & Flags.DREF:
-			div_class = "data_label"
+		elif flags & Flags.ISOP:
+			div_class = "label"
 
 		rc = f"\n\t<div class={div_class} id={name}>{name}:</div>"
 

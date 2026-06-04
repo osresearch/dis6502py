@@ -410,8 +410,9 @@ class Dis6502:
 					raise RuntimeError("%04x %s %d: overlaps existing array at %04x?" % (el_addr, name, array_size, self.arrays[el_addr]))
 
 			if data_type is None or data_type == "byte":
-				self.flags[el_addr] |= Flags.DREF | array_flag
-			elif data_type == "func":
+				#self.flags[el_addr] |= Flags.DREF | array_flag
+				self.flags[el_addr] |= array_flag
+			elif data_type == "func" or data_type == "label":
 				self.flags[el_addr] |= Flags.SREF
 			elif data_type == "word":
 				self.flags[el_addr] |= Flags.DREF | array_flag \
