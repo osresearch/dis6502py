@@ -5,6 +5,11 @@ More thrust burns more fuel and the game rewards good landings with more fuel.
 
 ### Fuel
 
+The fuel is stored in BCD format, which means that each byte can represent up 00 - 99, so a
+three byte value can represented 000000 to 999999.  The 6502 has a special mode in the ALU that
+causes addition and subtraction to produce results in this format.  Games often used it
+for scores since they wanted to display a base-10 value for the player.
+
 ```
 ; The remaining fuel is stored as a 3-byte BCD amount,
 ; which gives a maximum of 6 digits in base 10.
@@ -18,6 +23,10 @@ More thrust burns more fuel and the game rewards good landings with more fuel.
 ; 0x00 = Not playing
 .byte 97 fuel_state				; Bitmask of fuel state
 ```
+
+Various functions in the code will spend fuel, and they either call @fuel_drain_16 to drain a
+two-byte amount, or the full @fuel_drain that takes a three-byte amount.  This is in BCD and
+the `A:X:Y` calling convention is different from some other functions that work on multi-byte arguments.
 
 ```
 ; Drain a 16-bit BCD `X:Y` amount of fuel from the ship.
@@ -73,6 +82,85 @@ More thrust burns more fuel and the game rewards good landings with more fuel.
 .label fuel_drain_done:
 64a8  d8      CLD                        ; Reset to binary mode (no more BCD)
 64a9  60      RTS                        ; Return to the caller
+```
+
+The yaw routines burn a little bit of fuel, but most of the burn comes from the main engine.
+This is handled here:
+
+```
+; While the main engine is thrusting, fuel is drained based on the lever position
+.func fuel_drain_thrust:
+6b71  a9da    LDA #$da                   ; Default is to lose 218 fuel per thrust unit
+6b73  a40b    LDY thrust_mode_maybe      ; If thrust mode is negative
+6b75  3008    BMI fuel_thrust_multiply   ; then use the default
+6b77  a623    LDX mission_difficulty     ; Otherwise if the mission is
+6b79  e002    CPX #$02                   ; not equal to 2 ("Prime") with strong gravity
+6b7b  d002    BNE fuel_thrust_multiply   ; then also use the default
+6b7d  a990    LDA #$90                   ; Mission 2 gets a little less burn per thrust unit
+.label fuel_thrust_multiply:
+6b7f  20ef70  JSR mult16                 ; `A` = thrust cost `Y` = thrust setting
+6b82  aa      TAX                        ; Ignores the low bits, uses just the high byte of the result
+6b83  a000    LDY #$00                   ;
+6b85  8437    STY GenByte_0037           ;
+6b87  a007    LDY #$07                   ;
+6b89  20c679  JSR dec_to_bcd             ; Converts the binary result to BCD
+6b8c  a8      TAY                        ; adjusts the calling convention
+6b8d  4c6164  JMP fuel_drain_16          ; and drains that much fuel (in BCD)
+
+
+; When the ship crashes, a random amount of fuel is lost
+.func fuel_lost_to_crash_wrapper:
+6b90  a55d    LDA ship_state_maybe       ; If any of the bottom bits in ship_state are set
+6b92  290f    AND #$0f                   ; (bottom bits mean exploding?)
+6b94  f049    BEQ rts_6bdf               ; then return immediately
+.func fuel_lost_to_crash:
+6b96  f8      SED                        ;
+6b97  a59e    LDA score_bcd_maybe        ;
+6b99  38      SEC                        ;
+6b9a  e5a2    SBC fuel_used[1]           ;
+6b9c  aa      TAX                        ;
+6b9d  a59f    LDA Z9f                    ;
+6b9f  e5a3    SBC fuel_used[2]           ;
+6ba1  a8      TAY                        ;
+6ba2  a5a0    LDA Za0                    ;
+6ba4  e900    SBC #$00                   ;
+6ba6  d8      CLD                        ;
+6ba7  9036    BCC rts_6bdf               ;
+6ba9  f004    BEQ L6baf                  ;
+6bab  a299    LDX #$99                   ;
+6bad  a099    LDY #$99                   ;
+.label L6baf:
+6baf  8a      TXA                        ;
+6bb0  d003    BNE L6bb5                  ;
+6bb2  98      TYA                        ;
+6bb3  f02a    BEQ rts_6bdf               ;
+.label L6bb5:
+6bb5  98      TYA                        ;
+6bb6  a4ad    LDY fuel_tank[1]           ;
+6bb8  843a    STY GenByte_003a           ;
+6bba  a4ae    LDY fuel_tank[2]           ;
+6bbc  843b    STY GenByte_003b           ;
+6bbe  a000    LDY #$00                   ;
+6bc0  84a2    STY fuel_used[1]           ;
+6bc2  84a3    STY fuel_used[2]           ;
+6bc4  206364  JSR fuel_drain             ;
+6bc7  a5a2    LDA fuel_used[1]           ;
+6bc9  a6a3    LDX fuel_used[2]           ;
+6bcb  2497    BIT fuel_state             ;
+6bcd  3004    BMI L6bd3                  ;
+6bcf  a53a    LDA GenByte_003a           ;
+6bd1  a63b    LDX GenByte_003b           ;
+.label L6bd3:
+6bd3  8595    STA fuel_lost_bcd          ;
+6bd5  8696    STX Z96                    ;
+6bd7  0596    ORA Z96                    ;
+6bd9  f004    BEQ rts_6bdf               ;
+6bdb  a97f    LDA #$7f                   ;
+6bdd  8590    STA fuel_lost_timeout      ;
+
+; Another shared `RTS`
+.func rts_6bdf:
+6bdf  60      RTS                        ; Shared with a few nearby functions
 ```
 
 ### Thrust

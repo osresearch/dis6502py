@@ -218,3 +218,82 @@ like ghidra and sometimes requires manual annotation to decompile.
 .byte 05 yaw_slow			; Is the yaw rate slow enough to decay
 .byte 06 yaw_nonzero			; Is the yaw rate non-zero
 ```
+
+### Ship state
+
+Most of the ship's state is stored in zeropage global variables.  These include the
+XY acceleration (stored as 17-bit signed magnitude), the velocity and position
+(stored as 9-bit signed magnitude?)
+
+```
+.byte 46 ship_accel_sign 2 ; The sign bits for the X and Y accelerations
+.byte 55 ship_enable_x ; Disable physics for the X and Y axes (bit 7)
+.byte 56 ship_abort ; Has the abort button been triggered?
+.byte 57 ship_enable_y ; Accessed via array from @ship_enable_x
+.byte 58 ship_accel 2 ; The X and Y acceleration magnitudes for the ship's thrust
+.byte 5a ship_vel_sign_x ; Sign bit for the X velocity
+
+; 0x8F == exploding?
+; 0x00 == +50 points
+; 0x4x == +15 points
+; 0x0x == + 5 points (bottom bits ignored?)
+; initialized to 0 by @ResetGameState
+.byte 5d ship_state_maybe ; Bit map of stuff about the ship
+
+.word 5e ship_vel 2 ; Ship horizontal X and Y
+.word 07 ship_pos 2 ; Ship position 16-bit
+```
+
+### Ship Position and Velocity update
+
+The @mult16 function is used to compute the ship's X and Y acceleration based on the current thrust,
+a thrust-to-force lookup table, and then multiplying by the sine and cosine of the ship's angle to
+rotate the force into the screen coordinate frame.
+
+```
+; Update the ship's acceleration in the screen reference frame
+; Compute sin and cos of the ship's angle and multiplies the
+; current thrust setting to get the X and Y acceleration.
+; Also computes the sign bit for these accelerations
+.func ship_compute_accel_xy:
+6b32  a502    LDA ship_angle_modulo      ; Read the reduced ship's angle (updated by @ship_command_yaw_easy )
+6b34  4a      LSR                        ; This is 0-31, where 0 is horizontal facing right, 8 is vertical,
+6b35  4a      LSR                        ; 16 is horizontal facing left, 31 is straight down
+6b36  4a      LSR                        ; Divide this reduced angle by 8 to get the quadrant that it is in
+6b37  aa      TAX                        ;
+6b38  bdf276  LDA sine_quadrants,X       ; Read the quadrant bits (bit 7 = X direction, bit 6 = Y direction)
+6b3b  8546    STA ship_accel_sign        ; Store the X accleration sign bit (used by @add16_signed_mag)
+6b3d  0a      ASL                        ; Shift it left once
+6b3e  8547    STA ship_accel_sign[1]     ; Store the Y acceleration sign bit
+6b40  a601    LDX actual_thrust_maybe    ;
+6b42  bdf676  LDA thrust_to_acc,X        ;
+6b45  850b    STA thrust_mode_maybe      ;
+6b47  a502    LDA ship_angle_modulo      ; Get the ship's angle (0-31)
+6b49  290f    AND #$0f                   ; Get how far from horizontal it is (up or down)
+6b4b  c909    CMP #$09                   ; If it is 0-8, use the first half of the sine table
+6b4d  9004    BCC flip_to_other_half     ; (
+6b4f  490f    EOR #$0f                   ; Invert the clamped angle, which flips it around 45 degrees
+6b51  6900    ADC #$00                   ; Why carry?
+.label flip_to_other_half:
+6b53  8537    STA GenByte_0037           ;
+6b55  4907    EOR #$07                   ;
+6b57  6901    ADC #$01                   ;
+6b59  290f    AND #$0f                   ;
+6b5b  aa      TAX                        ;
+6b5c  bde976  LDA sine_table,X           ;
+6b5f  a40b    LDY thrust_mode_maybe      ;
+6b61  20ef70  JSR mult16                 ;
+6b64  8558    STA ship_accel             ;
+6b66  a637    LDX GenByte_0037           ;
+6b68  bde976  LDA sine_table,X           ;
+6b6b  20ef70  JSR mult16                 ;
+6b6e  8559    STA ship_accel[1]          ;
+6b70  60      RTS                        ;
+```
+
+```
+.byte 76f2 sine_quadrants 4 ; Define the quadrants
+.byte 76f6 thrust_to_acc 16 ; How much acceleration comes from the different thrust levels
+.byte 76e9 sine_table 9 ; Reduced sine table for 0-45 degrees
+```
+

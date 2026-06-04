@@ -85,7 +85,7 @@
 008f GenByte08f
 0090 fuel_lost_timeout
 0091 random_message
-0092 bcd_output
+0092 bcd_output byte 3
 0095 fuel_lost_bcd
 0097 fuel_state
 0098 fuel_per_coin
@@ -272,7 +272,13 @@
 6b32 ship_compute_accel_xy func
 6b53 flip_to_other_half
 6b71 fuel_drain_thrust func
-6b90 fuel_lost_to_crash func
+6b7f fuel_thrust_multiply
+6b90 fuel_lost_to_crash_wrapper func
+6b96 fuel_lost_to_crash func
+6baf L6baf
+6bb5 L6bb5
+6bd3 L6bd3
+6bdf rts_6bdf func
 6be0 score_add_landing_bonus func
 6c45 landing_bonus_amount
 6c68 ship_update func
@@ -361,6 +367,7 @@
 799f draw_insert_coin_screen func
 79c2 dec_to_bcd_16bit func
 79c6 dec_to_bcd func
+79d1 dd_loop
 79f2 DrawString func
 79f8 copy_next_vec_instruction
 7a1e increment_char_ptr

@@ -3,10 +3,10 @@ all: llander.sym llander.asm
 llander.sym: FORCE
 	../annotate6502.py \
 		index.md \
+		math.md \
 		buttons.md \
 		rotation.md \
 		thrust.md \
-		math.md \
 		zeropage.md \
 		footer.md \
 		> index.html
