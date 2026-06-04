@@ -39,8 +39,8 @@
 0044 mult_acc word
 0045 mult_acc_high
 0046 ship_accel_sign byte 2
-0048 delta2
-004a delta1
+0048 delta2 word
+004a delta1 word
 004c delta2_sign
 004d delta1_sign
 004e drawing_scale
@@ -264,8 +264,13 @@
 6cef get_next_5bits func
 6cfe add16_signed_mag func
 6d00 add16_signed_mag_arg1 func
-6d02 add16_signed_mag_arg1_short
+6d02 add16_signed_mag_arg1_short func
 6d04 add16_signed_magnitude_core func
+6d25 return_delta1_sign
+6d27 return_delta1
+6d2c opposite_underflow
+6d37 opposite_2c_carry
+6d3e same_sign
 6d4f GameRunningLoop func
 6fb8 vec_letter_something func
 6ff9 debris_something_setup_gb3c func

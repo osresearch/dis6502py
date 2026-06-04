@@ -239,6 +239,8 @@ class Annotator:
 		else:
 			if self.dis.flags[operand] & Flags.ARRAY:
 				(operand,_) = self.dis.array_ref(operand)
+			elif self.dis.flags[operand] & Flags.WORD_HIGH:
+				operand -= 1
 			op_name = "<a class=link href=#%04x>%s</a>" % (operand,op_name)
 			instr = fmt % (op_name)
 
@@ -311,18 +313,20 @@ class Annotator:
 
 	def print_data(self, addr, comment):
 		label_div = self.make_label(addr)
+		comment_div = ""
+		array_text = ""
+		hexdump = ""
 
 		if comment:
 			self.dis.comments[addr] = comment
 			comment_div = f"\n\t<div class=comment>{self.fake_markdown(comment)}</div>"
-		else:
-			comment_div = ""
 
 		addr_hex = "%04x" % (addr)
 
 		flags = self.dis.flags[addr]
 		data_type = self.dis.types.get(addr, "byte")
 		array_len = self.dis.arrays.get(addr, 1) & 0xFFFF
+
 		if flags & Flags.LOADED:
 			hexdump = []
 			for i in range(0,array_len):
@@ -331,13 +335,14 @@ class Annotator:
 				else:
 					hexdump.append("%02x" % self.dis.read8(addr + i))
 			hexdump = ' ' + (','.join(hexdump))
-		else:
-			hexdump = ''
+
+		if array_len > 1:
+			array_text = "[%d]" % (array_len)
 
 		data_size = array_len * (2 if data_type == "word" else 1)
 		return (data_size, f"""<div id={addr_hex}>{label_div}
 	<div class=addr>{addr_hex}</div>
-	<div class=hexdump>.{data_type}{hexdump}</div>{comment_div}
+	<div class=hexdump>.{data_type}{array_text}{hexdump}</div>{comment_div}
 </div>""")
 
 	# produce a consolidated dump (along with stats)

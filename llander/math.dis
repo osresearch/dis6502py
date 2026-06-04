@@ -153,9 +153,9 @@ rotate the force into the screen coordinate frame.
 6b36  4a      LSR                        ; Divide this reduced angle by 8 to get the quadrant that it is in
 6b37  aa      TAX                        ;
 6b38  bdf276  LDA sine_quadrants,X       ; Read the quadrant bits (bit 7 = X direction, bit 6 = Y direction)
-6b3b  8546    STA ship_accel_sign        ; Cache the X direction in @ship_accel_sign[0]
+6b3b  8546    STA ship_accel_sign        ; Store the X accleration sign bit (used by @add16_signed_mag)
 6b3d  0a      ASL                        ; Shift it left once
-6b3e  8547    STA ship_accel_sign[1]     ; Cache the Y direction in @ship_accel_sign[1]
+6b3e  8547    STA ship_accel_sign[1]     ; Store the Y acceleration sign bit
 6b40  a601    LDX actual_thrust_maybe    ;
 6b42  bdf676  LDA thrust_to_acc,X        ;
 6b45  850b    STA thrust_mode_maybe      ;
@@ -186,5 +186,88 @@ rotate the force into the screen coordinate frame.
 .byte 76f2 sine_quadrants 4 ; Define the quadrants
 .byte 76f6 thrust_to_acc 16 ; How much acceleration comes from the different thrust levels
 .byte 76e9 sine_table 9 ; Reduced sine table for 0-45 degrees
+
 .text
+
+### 16-bit signed magnitude math
+
+The core game update routine uses the 16-bit signed magnitude XY accelerations to compute
+the ship's velocity in the XY coordinate frame, which are then used to update the XY positions.
+Adding the values as part of the timestep update is implemented in this set of functions:
+
+; Update @delta1 with signed byte `Y` and 16-bit magnitude in `A:X`.
+; Falls through...
+.func add16_signed_mag:
+6cfe  844d    STY delta1_sign            ;
+
+; Update @delta1 with 16-bit magnitude in `A:X`; does not modify the sign
+; Falls through...
+.func add16_signed_mag_arg1:
+6d00  854b    STA delta1_high            ;
+
+; Update only the low-byte of of @delta1 from `X`; does not modify the sign or high byte
+; Falls through...
+.func add16_signed_mag_arg1_short:
+6d02  864a    STX delta1                 ;
+
+; Compute the 16-bit signed addition of @delta1 and @delta2
+; Returns the result in @delta1 and @delta1_sign, as well as `X` and `A:Y`
+; Why is the return different from the calling convention?
+.func add16_signed_magnitude_core:
+6d04  a54c    LDA delta2_sign            ; Compare the sign bits for @delta1 and @delta2
+6d06  454d    EOR delta1_sign            ; which are stored in the 7th bit of the byte
+6d08  1034    BPL same_sign              ; Same sign?
+6d0a  38      SEC                        ; Not the same sign, so this will be a @delta1 - @delta2
+6d0b  a54a    LDA delta1                 ; Subtract the low bytes of @delta1
+6d0d  e548    SBC delta2                 ; and @delta2.
+6d0f  a8      TAY                        ; Store this in `Y`
+6d10  a54b    LDA delta1_high            ; Subtract the high bytes of @delta1
+6d12  e549    SBC delta2_high            ; and @delta2, using the carry from @6d0d
+6d14  9016    BCC opposite_underflow     ; If carry was cleared, an underflow occured
+6d16  d00d    BNE return_delta1_sign     ; Were some bits set in the high byte? Is so return them.
+6d18  c000    CPY #$00                   ; Were some bits set in the low byte in `Y`?
+6d1a  d009    BNE return_delta1_sign     ; If so, return them
+6d1c  854a    STA delta1                 ; Return result was exactly zero, so store zero in the low byte
+6d1e  854b    STA delta1_high            ; and zero the high byte
+6d20  854d    STA delta1_sign            ; and reset the sign (no negative zero)
+6d22  aa      TAX                        ; Return low = 0
+6d23  a8      TAY                        ; Return high = 0
+6d24  60      RTS                        ; And return the triple
+.label return_delta1_sign:
+6d25  a64d    LDX delta1_sign            ; Return result has same sign as @delta1
+.label return_delta1:
+6d27  844a    STY delta1                 ; Store low byte into `Y`
+6d29  854b    STA delta1_high            ; Store high byte into `A`
+6d2b  60      RTS                        ; And return the triple
+.label opposite_underflow:
+6d2c  49ff    EOR #$ff                   ; The result of the subtraction underflowed, so invert the high byte in `A`
+6d2e  aa      TAX                        ; and move it to `X`
+6d2f  98      TYA                        ; Move the low byte of the subtraction from `Y` into `A`
+6d30  49ff    EOR #$ff                   ; Invert the low byte as well
+6d32  a8      TAY                        ; and move it back into `Y`
+6d33  c8      INY                        ; Increment `Y`, to undo the two's complement negative
+6d34  d001    BNE opposite_2c_carry      ; If this also underflowed,
+6d36  e8      INX                        ; then also increment `X` to under the high-byte's two's complement negative
+.label opposite_2c_carry:
+6d37  8a      TXA                        ; Move the high byte of the subtraction into `A`
+6d38  a64c    LDX delta2_sign            ; The underflowed result has the same sign as @delta2 had
+6d3a  864d    STX delta1_sign            ; Store the new sign byte into @delta1 for the return
+6d3c  90e9    BCC return_delta1          ; I think this is a branch always?
+.label same_sign:
+6d3e  18      CLC                        ; Clear the carry
+6d3f  a54a    LDA delta1                 ; Add the low bytes of @delta1
+6d41  6548    ADC delta2                 ; and @delta2
+6d43  a8      TAY                        ; Store the result in `Y`
+6d44  a54b    LDA delta1_high            ; Add the high bytes of @delta1
+6d46  6549    ADC delta2_high            ; and @delta2, using the carry from the low-byte addition
+6d48  90db    BCC return_delta1_sign     ; If no overflow occured, return the result in @delta1
+6d4a  a9ff    LDA #$ff                   ; Overflow, so clamp at `0xFFFF`
+6d4c  a8      TAY                        ; in `A:Y`
+6d4d  b0d6    BCS return_delta1_sign     ; And return it with the same sign as @delta1
+
+
+.byte 4d delta1_sign ; Sign byte for the 16-bit @delta1
+.word 4a delta1 ; 16-bit magnitude for @add16_signed_mag
+.byte 4c delta2_sign ; Sign byte for the 16-bit @delta2
+.word 48 delta2 ; 16-bit magnitude for @add16_signed_mag
 
