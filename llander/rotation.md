@@ -79,7 +79,7 @@ functions.  Let's look at that first one since it's "easier":
 63f8  0a      ASL                        ;
 63f9  0a      ASL                        ;
 63fa  8567    STA ship_angle_high        ; And store the correct high byte for the ship's angle
-63fc  90d5    BCC rts_63d3               ; no rotation happened, so do not drain any fuel
+63fc  90d5    BCC rts_63d3               ; if no rotation happened do not drain any fuel, otherwise fall through into @yaw_drain_fuel
 
 ; Wrapper that drains a small amount of fuel when yawing.
 ; All difficulties use this.
