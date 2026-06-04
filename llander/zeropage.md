@@ -12,5 +12,4 @@ a static value in the @RESET code.
 .word 66 ship_angle				; 16-bit Ship angle
 .word 7d min16_a				; Arg 1 for min16
 .word 7f min16_b				; Arg 2 for min16
-.byte 97 fuel_state				; Bitmask of 0x80 = have fuel, 0x40 = out of fuel, 0 = not playing
 ```

@@ -5,6 +5,7 @@ llander.sym: FORCE
 		index.md \
 		buttons.md \
 		rotation.md \
+		thrust.md \
 		math.md \
 		zeropage.md \
 		footer.md \

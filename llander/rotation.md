@@ -46,6 +46,14 @@ functions.  Let's look at that first one since it's "easier":
 ### Yaw (Easy)
 
 ```
+; Control the ship's yaw by adjusting the angle.
+; In the three easy modes the player only controls the rotation angle of the ship
+; with the rotate left and rotate right buttons.
+; In the easiest mode the ship is limited to mostly upright angles.
+;
+; Yawing does cost a small amount of fuel and there is a tail call
+; to @yaw_drain_fuel.
+;
 .func ship_command_yaw_easy
 63d4  2497    BIT fuel_state             ; Read the fuel variable
 63d6  10fb    BPL rts_63d3               ; If bit 8 is not set (no fuel) jump to the shared RTS
@@ -72,10 +80,14 @@ functions.  Let's look at that first one since it's "easier":
 63f9  0a      ASL                        ;
 63fa  8567    STA ship_angle_high        ; And store the correct high byte for the ship's angle
 63fc  90d5    BCC rts_63d3               ; no rotation happened, so do not drain any fuel
-.label yaw_drain_fuel
+
+; Wrapper that drains a small amount of fuel when yawing.
+; All difficulties use this.
+; There is a tail call to @fuel_drain
+.func yaw_drain_fuel
 63fe  a200    LDX #$00                   ; Pass a 16-bit BCD value 0x0600 to
 6400  a006    LDY #$06                   ; the fuel drain wrapper
-6402  d05d    BNE fuel_drain_wrapper     ; (Always taken)
+6402  d05d    BNE fuel_drain_16          ; (Always taken)
 ```
 
 Note that the last instruction in the function is a `BNE`, even though a constant non-zero value has just
@@ -203,4 +215,6 @@ like ghidra and sometimes requires manual annotation to decompile.
 
 ```
 .word 03 yaw_rate			; 16-bit yaw rate for momentum mode
+.byte 05 yaw_slow			; Is the yaw rate slow enough to decay
+.byte 06 yaw_nonzero			; Is the yaw rate non-zero
 ```

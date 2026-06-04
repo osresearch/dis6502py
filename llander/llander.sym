@@ -92,10 +92,10 @@
 0099 credits_per_coin
 009c time_bcd_maybe
 009e score_bcd_maybe
-00a2 score_bcd_something_else
+00a1 fuel_used byte 3
 00a4 score_bcd
 00a9 bcd_score_maybe2
-00ac fuel_bcd
+00ac fuel_tank byte 3
 00b0 math_something
 00b2 ValidCoins
 00b3 WaitCoinTimers
@@ -191,13 +191,18 @@
 63d3 rts_63d3 func
 63d4 ship_command_yaw_easy func
 63f6 cancel_rotation
-63fe yaw_drain_fuel
+63fe yaw_drain_fuel func
 6404 IO_read_rotate_buttons func
 640c not_right
 6412 not_left
 6414 thrust_smoothing_maybe func
-6461 fuel_drain_wrapper
+6461 fuel_drain_16 func
 6463 fuel_drain func
+647b low_fuel
+648f fuel_no_underflow
+6499 fuel_track_used
+649e fuel_used_loop
+64a8 fuel_drain_done
 64aa abort_procedure_update func
 64ff str_1100
 6503 str_1300
