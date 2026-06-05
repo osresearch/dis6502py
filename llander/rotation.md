@@ -109,6 +109,17 @@ like ghidra and sometimes requires manual annotation to decompile.
 ### Yaw (Hard)
 
 ```
+; Missions are selected with the "Game Select" button and range from 0 - 3:
+;
+; 0 "Training" Light gravity     Friction     Controlled Rotation
+; 1 "Cadet"    Moderate gravity  No Friction  Controlled Rotation
+; 2 "Prime"    Strong gravity    No Friction  Controlled Rotation
+; 3 "Command"  Moderate gravity  No Friction  Rotational Momentum
+;
+.byte 23 mission_difficulty ; Mission difficulty 0 - 3
+```
+
+```
 ; @ship_command_yaw handles the hard yaw mode in difficulty 3 "Command"
 ; where the player controls the yaw thrusters, rather than the angle.
 ; this allows the ship to rotate all the way around and they have to stop
