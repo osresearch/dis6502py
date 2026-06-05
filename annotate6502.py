@@ -162,6 +162,9 @@ class Annotator:
 			line
 		)
 
+		# bulleted lists (need to make this work better)
+		line = re.sub(r'^\*\s+(.*)', r'<li>\1', line)
+
 		return line
 
 
