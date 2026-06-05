@@ -123,6 +123,8 @@ class Annotator:
 			self.add_data("word", words[1:])
 		elif words[0] == ".dvg":
 			self.process_dvg(words[1:])
+		elif words[0] == ".dvg_parse":
+			self.dvg_parse(words[1:])
 		elif words[0][0] == ".":
 			raise RuntimeError("Unknown directive " + words[0])
 		elif self.mode == "dis" or self.mode == "func" or self.mode == "label":
@@ -458,6 +460,15 @@ class Annotator:
 		dvg.y = height - 2
 		print("DVG %04x+%04x" % (addr, length), file=sys.stderr)
 		print(dvg.process(cmd))
+
+	def dvg_parse(self, words):
+		addr = int(words[0], 16)
+		length = int(words[1], 0) * 2
+		dvg = DVG(self.dvg_rom)
+		ram = self.dis.ram[addr:addr+length]
+		dvg.process(ram)
+		print("<ul><li>", "<li>".join(dvg.trace_log), "</ul>")
+
 
 ann = Annotator()
 for file in sys.argv[1:]:

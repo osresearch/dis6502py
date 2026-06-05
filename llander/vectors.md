@@ -144,6 +144,7 @@ that it consists of a few short vectors (command `F`) and then a `RTSL` (command
 
 ```
 .word 55be font_a 8 ; Character "A"
+.dvg_parse 55be 16
 ```
 
 

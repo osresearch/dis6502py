@@ -26,13 +26,15 @@ class DVG:
 		self.y = 0
 		self.s = 3
 		self.stack = []
+		self.trace_log = []
 
 	def svg(self):
 		return self.d.as_svg()
 
-	def trace(self, *s):
+	def trace(self, s):
 		if self.debug:
-			print(*s, file=sys.stderr)
+			print(s, file=sys.stderr)
+		self.trace_log.append(s)
 
 	def add_line(self, bright, scale, sx, x, sy, y):
 		if sx: x = -x
@@ -90,7 +92,7 @@ class DVG:
 			bright = (cmd2 >> 12) & 0xF
 			sx = (cmd2 >> 10) & 1
 			x = (cmd2 >> 0) & 0x3FF
-			self.trace("%04x%04x" % (cmd, cmd2), f"{scale=} {sx=} {x=} {bright=} {sy=} {y=}")
+			self.trace(f"VCTR {scale=} {sx=} {x=} {bright=} {sy=} {y=}")
 			self.add_line(bright, scale, sx, x, sy, y)
 		elif c == 0xA:
 			# LABS
@@ -109,19 +111,18 @@ class DVG:
 			# JSR
 			self.stack.append(self.pc)
 			self.pc = ((cmd & 0xFFF) << 1)
-			self.trace("JSR %04x (%04x)" % (self.pc, cmd))
+			self.trace("JSRL %04x (%04x)" % (self.pc, cmd))
 		elif c == 0xD:
 			# RTS
+			self.trace("RTSL")
 			if len(self.stack) == 0:
-				self.trace("RTS empty")
 				return False
 			self.pc = self.stack[-1]
 			self.stack = self.stack[0:-1]
-			self.trace("RTS %04x" %(self.pc))
 		elif c == 0xE:
 			# JMP
 			self.pc = ((cmd & 0xFFF) << 1)
-			self.trace("JMP %04x (%04x)" % (self.pc, cmd))
+			self.trace("JMPL %04x (%04x)" % (self.pc, cmd))
 		elif c == 0xF:
 			# SVEC
 			s1 = (cmd >> 11) & 0x1
@@ -133,7 +134,11 @@ class DVG:
 			x  = (cmd >>  0) & 0x3
 
 			scale = (s2 << 1 | s1)
-			self.trace("%04x" % (cmd), f"scale={s2}{s1}={scale} {sx=} {x=} {b=} {sy=} {y=}")
+			self.trace(f"SVEC s=%3d b=%01x x=%+3d y=%+3d" % (
+				2**scale, b,
+				-x if sx else +x,
+				-y if sy else +y,
+			))
 			self.add_line(b, 2**scale, sx, x, sy, y)
 
 		return True
