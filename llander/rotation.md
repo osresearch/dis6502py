@@ -296,6 +296,12 @@ a thrust-to-force lookup table, and then multiplying by the sine and cosine of t
 rotate the force into the screen coordinate frame.
 
 ```
+.byte 76f2 sine_quadrants 4 ; Define the quadrants
+.byte 76f6 thrust_to_acc 16 ; How much acceleration comes from the different thrust levels
+.byte 76e9 sine_table 9 ; Reduced sine table for 0-45 degrees
+```
+
+```
 ; Update the ship's acceleration in the screen reference frame
 ; Compute sin and cos of the ship's angle and multiplies the
 ; current thrust setting to get the X and Y acceleration.
@@ -336,9 +342,107 @@ rotate the force into the screen coordinate frame.
 6b70  60      RTS                        ;
 ```
 
-```
-.byte 76f2 sine_quadrants 4 ; Define the quadrants
-.byte 76f6 thrust_to_acc 16 ; How much acceleration comes from the different thrust levels
-.byte 76e9 sine_table 9 ; Reduced sine table for 0-45 degrees
-```
 
+Now that we have the math functions for computing signed magnitude addition and transforming
+the thrust vectors into the XY screen coordinate frame, we can finally update the ship's position.
+
+```
+; Update ship acceleration, velocity and position in the XY frame once per clock tick
+;
+; The 16-bit velocity is normally divided by 256, but if the screen is zoomed in
+; then it is only divided by 64.  Since the NMI runs at 250 HZ, this division
+; effectively is the same as multiplying the velocity by dt.
+ ;
+; This updates the ship position on each axis
+;
+;    x = x + vx * dt
+;    vx = vx + thrust_x * dt
+;    y = y + vy * dt
+;    vy = vy + (thrust_y - gravity) * dt
+;
+; @add16_signed_mag_arg1 is used for position update since the position sign is always positive
+; @add16_signed_mag_core is used to accumulate the thrust_y - gravity plus velocity
+;
+.func ship_update:
+6c68  a202    LDX #$02                   ; Make two loops, one for X and one for Y.  Note that `i` is decremented by 2 each time through the loop @6ce7
+.label ship_update_loop:
+6c6a  8637    STX GenByte_0037           ; Store the iterator temporary
+6c6c  a900    LDA #$00                   ; Initialize the global helper variables
+6c6e  855d    STA ship_state_maybe       ;
+6c70  854d    STA delta1_sign            ; Position sign is always positive
+6c72  8549    STA delta2_high            ; velocity_high = 0
+6c74  b555    LDA ship_enable_x,X        ; is bit 7 set in @ship_enable_x or @ship_enable_y (depending on X)
+6c76  3028    BMI skip_physics           ; if so skip the physics for this axis
+6c78  b55f    LDA ship_vel_high[0],X     ; Copy the high byte of the velocity for this axis
+6c7a  8548    STA delta2                 ; into the low-byte of @delta2
+6c7c  b55e    LDA ship_vel[0],X          ; Load the low byte of the ship's velocity
+6c7e  244e    BIT drawing_scale          ; Check if we have zoomed in on the ship and terrain
+6c80  700a    BVS skip_zoom              ; Skip the zoom if we haven't zoomed in (bit 6 is not set)
+6c82  0a      ASL                        ; Double the low byte of the velocity
+6c83  2648    ROL delta2                 ; Double the high byte of the velocity (shifting in from the low byte)
+6c85  2649    ROL delta2_high            ; Double the high high byte of the velocity
+6c87  0a      ASL                        ; And do it again...
+6c88  2648    ROL delta2                 ; This multiplies the velocity by four
+6c8a  2649    ROL delta2_high            ; Note that the bottom byte is otherwise unused
+.label skip_zoom:
+6c8c  b55a    LDA ship_vel_sign_x,X      ; Get the sign bit for the velocity for this axis
+6c8e  854c    STA delta2_sign            ; and store it in the @delta2 workspace
+6c90  b508    LDA ship_pos_high[0],X     ; Get the position high byte for this axis
+6c92  48      PHA                        ; Push it
+6c93  b507    LDA ship_pos[0],X          ; Get the position low byte
+6c95  aa      TAX                        ; move it into `X`
+6c96  68      PLA                        ; Pop the high byte so that the 16-bit position is in `A:X`
+6c97  20006d  JSR add16_signed_mag_arg1  ; Compute Position + Velocity for this axis
+6c9a  a637    LDX GenByte_0037           ; Restore the iterator
+6c9c  9508    STA ship_pos_high[0],X     ; Write the high byte for this axis
+6c9e  9407    STY ship_pos[0],X          ; and write the low byte for this axis
+.label skip_physics:
+6ca0  a900    LDA #$00                   ; Gravity always has a zero high-byte
+6ca2  8549    STA delta2_high            ;
+6ca4  8a      TXA                        ; Move the iterator to the accumulator for testing
+6ca5  f002    BEQ no_gravity             ; If i == 0, don't add any gravity (x axis)
+6ca7  a563    LDA gravity                ; @gravity global is updated based on the mission difficulty
+.label no_gravity:
+6ca9  8548    STA delta2                 ; Store either 0 or the gravity into the low-byte of @delta2
+6cab  a980    LDA #$80                   ; Since gravity is always negative
+6cad  854c    STA delta2_sign            ; set the sign bit for @delta2 to negative
+6caf  b45a    LDY ship_vel_sign_x,X      ; Get the sign bit of this axis' velocity into `Y`
+6cb1  b55f    LDA ship_vel_high[0],X     ; And load `A:X` with this axis' 16-bit velocity magnitutde
+6cb3  48      PHA                        ; (same logic as before
+6cb4  b55e    LDA ship_vel[0],X          ; to push things onto the stack
+6cb6  aa      TAX                        ; and the pop them off again
+6cb7  68      PLA                        ; into the right registers)
+6cb8  20fe6c  JSR add16_signed_mag       ; Compute Velocity + Gravity for this axis
+6cbb  a537    LDA GenByte_0037           ; Restore the iterator
+6cbd  4a      LSR                        ; Divide it by two
+6cbe  aa      TAX                        ; and move it back to X
+6cbf  b558    LDA ship_accel[0],X        ; Get the 8-bit magnitude of the ship's thrust on this axis
+6cc1  8548    STA delta2                 ; and copy it into @delta2
+6cc3  b546    LDA ship_accel_sign[0],X   ; Get the thrust sign bit
+6cc5  854c    STA delta2_sign            ; and copy it into @delta2
+6cc7  a523    LDA mission_difficulty     ; Depending on the mission difficulty
+6cc9  c902    CMP #$02                   ; 2 == "Prime", which has strong gravity
+6ccb  d00c    BNE add_thrust_to_vel      ; other missions don't need to tweak the thrust
+6ccd  a548    LDA delta2                 ; Multiply the @delta2 value by 1.5
+6ccf  4a      LSR                        ; through clever shift and addition
+6cd0  18      CLC                        ; tricks with the carry flags
+6cd1  6548    ADC delta2                 ; delta2 = delta2 + (delta2 / 2)
+6cd3  8548    STA delta2                 ; effectively
+6cd5  9002    BCC add_thrust_to_vel      ; no overflow
+6cd7  e649    INC delta2_high            ; add the overflow to the high byte
+.label add_thrust_to_vel:
+6cd9  20046d  JSR add16_signed_mag_core  ; @delta1 already has Velocity + Gravity, so this is Velocity + Gravity + Thrust
+6cdc  48      PHA                        ; Result is in `A:Y`, push the high byte
+6cdd  8a      TXA                        ; Result sign bit is in `X`
+6cde  a637    LDX GenByte_0037           ; Restore the iterator
+6ce0  955a    STA ship_vel_sign_x,X      ; Update the velocity sign bit
+6ce2  945e    STY ship_vel[0],X          ; Update the velocity low byte
+6ce4  68      PLA                        ; Restore the high byte
+6ce5  955f    STA ship_vel_high[0],X     ; And store the high byte
+6ce7  ca      DEX                        ; Decrement `i` twice
+6ce8  ca      DEX                        ; since the loop is over 16-bit values
+6ce9  3003    BMI ship_update_done       ; If `i` is now negative (2 -> 0 -> -2), we're done
+6ceb  4c6a6c  JMP ship_update_loop       ; If not make another pass through the loop
+.label ship_update_done:
+6cee  60      RTS                        ; Ship position and velocity updated.  Return!
+```
