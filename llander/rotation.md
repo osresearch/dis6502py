@@ -261,12 +261,12 @@ rotate the force into the screen coordinate frame.
 6b35  4a      LSR                        ; 16 is horizontal facing left, 31 is straight down
 6b36  4a      LSR                        ; Divide this reduced angle by 8 to get the quadrant that it is in
 6b37  aa      TAX                        ;
-6b38  bdf276  LDA sine_quadrants,X       ; Read the quadrant bits (bit 7 = X direction, bit 6 = Y direction)
-6b3b  8546    STA ship_accel_sign        ; Store the X accleration sign bit (used by @add16_signed_mag)
+6b38  bdf276  LDA sine_quadrants[0],X    ; Read the quadrant bits (bit 7 = X direction, bit 6 = Y direction)
+6b3b  8546    STA ship_accel_sign[0]     ; Store the X accleration sign bit (used by @add16_signed_mag)
 6b3d  0a      ASL                        ; Shift it left once
 6b3e  8547    STA ship_accel_sign[1]     ; Store the Y acceleration sign bit
 6b40  a601    LDX actual_thrust_maybe    ;
-6b42  bdf676  LDA thrust_to_acc,X        ;
+6b42  bdf676  LDA thrust_to_acc[0],X     ;
 6b45  850b    STA thrust_value           ;
 6b47  a502    LDA ship_angle_modulo      ; Get the ship's angle (0-31)
 6b49  290f    AND #$0f                   ; Get how far from horizontal it is (up or down)
@@ -280,12 +280,12 @@ rotate the force into the screen coordinate frame.
 6b57  6901    ADC #$01                   ;
 6b59  290f    AND #$0f                   ;
 6b5b  aa      TAX                        ;
-6b5c  bde976  LDA sine_table,X           ;
+6b5c  bde976  LDA sine_table[0],X        ;
 6b5f  a40b    LDY thrust_value           ;
 6b61  20ef70  JSR mult16                 ;
-6b64  8558    STA ship_accel             ;
+6b64  8558    STA ship_accel[0]          ;
 6b66  a637    LDX GenByte_0037           ;
-6b68  bde976  LDA sine_table,X           ;
+6b68  bde976  LDA sine_table[0],X        ;
 6b6b  20ef70  JSR mult16                 ;
 6b6e  8559    STA ship_accel[1]          ;
 6b70  60      RTS                        ;

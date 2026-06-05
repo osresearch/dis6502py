@@ -28,9 +28,9 @@ are discussed in the button handling section.
 .func CheckCoinsInserted:
 78d3  a202    LDX #$02                   ; for each coin slot = 2, 0: (middle one is ignored)
 .label check_coin:
-78d5  bd0124  LDA IO_in1_coin,X          ; read coin[i] from external device
+78d5  bd0124  LDA IO_in1_coin[0],X       ; read coin[i] from external device
 78d8  0a      ASL                        ; move bit 7 into the carry flag (0 == no coin, 1 == coin)
-78d9  b5b7    LDA CoinDropTimers,X       ; read the debounce timer for this coin slot
+78d9  b5b7    LDA CoinDropTimers[0],X    ; read the debounce timer for this coin slot
 78db  291f    AND #$1f                   ; mask out the bottom bits of the debounce
 78dd  b037    BCS CheckDropTimerVal      ; if carry flag is set (coin) check how long it has been active
 78df  f010    BEQ CheckSlamSw            ; if the debounce timer is 0, check if the slam switch has been triggered
@@ -45,7 +45,7 @@ are discussed in the button handling section.
 .label DecDropTimer:
 78ef  e901    SBC #$01                   ; decrement the debounce timer
 .label CheckSlamSw:
-78f1  95b7    STA CoinDropTimers,X       ; store the (possibly updated) debounce timer
+78f1  95b7    STA CoinDropTimers[0],X    ; store the (possibly updated) debounce timer
 78f3  ad0020  LDA IO_in0                 ; read the memory mapped switches at 0x2000
 78f6  2904    AND #$04                   ; check bit 2, the slam switch
 78f8  d004    BNE CheckSlamTimer         ; if it is not set, goto the slam timer check
@@ -56,7 +56,7 @@ are discussed in the button handling section.
 7900  f008    BEQ CheckWaitTimer         ; If it is zero, check to see how the coin debouncers are doing
 7902  c6b4    DEC WaitCoinTimer_2        ; We're still waiting for slam timer to expire, so
 7904  a900    LDA #$00                   ; zero out the debounce counters
-7906  95b7    STA CoinDropTimers,X       ; for this coin slot
+7906  95b7    STA CoinDropTimers[0],X    ; for this coin slot
 7908  95b3    STA WaitCoinTimer_0,X      ; so that no coins will be accepted
 .label CheckWaitTimer:
 790a  18      CLC                        ; clear carry flag
@@ -69,7 +69,7 @@ are discussed in the button handling section.
 .label CheckDropTimerVal:
 7916  c91b    CMP #$1b                   ;
 7918  b009    BCS ResetDropTimer         ;
-791a  b5b7    LDA CoinDropTimers,X       ;
+791a  b5b7    LDA CoinDropTimers[0],X    ;
 791c  6920    ADC #$20                   ;
 791e  90d1    BCC CheckSlamSw            ;
 7920  f001    BEQ ResetDropTimer         ;
@@ -77,7 +77,7 @@ are discussed in the button handling section.
 .label ResetDropTimer:
 7923  a91f    LDA #$1f                   ;
 7925  b0ca    BCS CheckSlamSw            ;
-7927  95b7    STA CoinDropTimers,X       ; Reset the debounce timer for this slot
+7927  95b7    STA CoinDropTimers[0],X    ; Reset the debounce timer for this slot
 7929  b5b3    LDA WaitCoinTimer_0,X      ; and the check if the cool down timer
 792b  f001    BEQ SetWaitTimer           ; is zero (which means we haven't been waiting for a coin) so don't set the carry flag
 792d  38      SEC                        ; cool down was non-zero, so it is time to give them a credit by setting the carry

@@ -94,11 +94,13 @@ class Dis6502:
 
 	def name(self, addr, use_default=False):
 		flags = self.flags[addr]
-		if flags & Flags.NAMED:
-			return self.names[addr]
 		if flags & Flags.ARRAY:
 			# need to find the array this belongs to
+			# this is higher priority than NAMED so that
+			# the 0th index will be correctly shown
 			return self.name_array(addr)
+		if flags & Flags.NAMED:
+			return self.names[addr]
 		if flags & Flags.WORD_HIGH:
 			return self.names[addr-1] + "_high"
 		if flags & Flags.SREF:
@@ -141,10 +143,10 @@ class Dis6502:
 		if flags & (Flags.WORD_LOW | Flags.WORD_HIGH):
 			array_index //= 2
 
-		if array_index == 0:
-			return name
-		else:
-			return f"{name}[{array_index}]"
+#		if array_index == 0:
+#			return name
+#		else:
+		return f"{name}[{array_index}]"
 		
 
 	def save_ref(self, refer, refee):

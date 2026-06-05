@@ -90,8 +90,8 @@
 0097 fuel_state
 0098 fuel_per_coin
 0099 credits_per_coin
-009c time_bcd_maybe
-009e score_bcd_maybe
+009c time_bcd byte 2
+009e score_bcd_maybe byte 3
 00a1 fuel_used byte 3
 00a4 score_bcd
 00a9 bcd_score_maybe2
@@ -391,9 +391,10 @@
 7aee nmi_check_coins
 7af9 nmi_no_coins
 7afd nmi_update_lights
-7b16 L7b16
-7b2b L7b2b
-7b33 L7b33
+7b16 nmi_score_bcd_update
+7b20 nmi_time_bcd_update
+7b2b nmi_time_seconds_no_overflow
+7b33 not_a_second
 7b41 L7b41
 7b46 L7b46
 7b50 nmi_rti

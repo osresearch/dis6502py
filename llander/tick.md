@@ -12,6 +12,16 @@ from `0xFFa` and jump to that address
 .byte 84 thrust_low ; Low point for the thrust level (used for smoothing)
 .byte 73 dvg_timer ; Waits for acks from the vector generator
 .byte 74 nmi_counter ; Track how many NMI have been received
+.byte 87 nmi_counter_250 ; Count every 250 NMI's to create a 1 Hz counter
+.byte 8d time_in_seconds ; Increments once per second, triggered by @nmi_counter_250 going to zero
+.byte 9e score_bcd_maybe 3 ; BCD score value (6 digits, not sure how different from a4)
+.byte 9c time_bcd 2 ; BCD mission timer (4 digits, first byte is seconds, second byte is minutes)
+
+; 7------- Exploding?
+; -6------ Game playing?
+; --5----- Start screen
+; ---4---- Attract mode?
+.byte 22 game_state_flags ; Bitmask of the current game mode
 ```
 
 ```
@@ -77,54 +87,55 @@ from `0xFFa` and jump to that address
 7afb  a200    LDX #$00                   ; also reset the rest of them
 .label nmi_update_lights:
 7afd  205f79  JSR io_lamps_set           ; update the lamps based on if a coin was received
-7b00  2422    BIT game_state_flags       ;
-7b02  502f    BVC L7b33                  ;
-7b04  c687    DEC nmi_counter_250        ;
-7b06  d02b    BNE L7b33                  ;
-7b08  a9fa    LDA #$fa                   ;
-7b0a  8587    STA nmi_counter_250        ;
-7b0c  e68d    INC time_in_seconds        ;
-7b0e  f8      SED                        ;
-7b0f  18      CLC                        ;
-7b10  a200    LDX #$00                   ;
-7b12  a002    LDY #$02                   ;
-7b14  a908    LDA #$08                   ;
-.label L7b16:
-7b16  759e    ADC score_bcd_maybe,X      ;
-7b18  959e    STA score_bcd_maybe,X      ;
-7b1a  a900    LDA #$00                   ;
-7b1c  e8      INX                        ;
-7b1d  88      DEY                        ;
-7b1e  10f6    BPL L7b16                  ;
-7b20  a59c    LDA time_bcd_maybe         ;
-7b22  18      CLC                        ;
-7b23  6901    ADC #$01                   ;
-7b25  c960    CMP #$60                   ;
-7b27  9002    BCC L7b2b                  ;
-7b29  a900    LDA #$00                   ;
-.label L7b2b:
-7b2b  859c    STA time_bcd_maybe         ;
-7b2d  a59d    LDA Z9d                    ;
-7b2f  6900    ADC #$00                   ;
-7b31  859d    STA Z9d                    ;
-.label L7b33:
-7b33  d8      CLD                        ;
-7b34  a522    LDA game_state_flags       ;
-7b36  d00e    BNE L7b46                  ;
-7b38  a574    LDA nmi_counter            ;
-7b3a  a21f    LDX #$1f                   ;
-7b3c  4a      LSR                        ;
-7b3d  9002    BCC L7b41                  ;
-7b3f  a210    LDX #$10                   ;
+7b00  2422    BIT game_state_flags       ; Is there a game in progress?
+7b02  502f    BVC not_a_second           ; If bit 6 is not set (no game playing) do not update the per second timer
+7b04  c687    DEC nmi_counter_250        ; Decrement the 250 divider
+7b06  d02b    BNE not_a_second           ; if it is non zero, skip ahead
+7b08  a9fa    LDA #$fa                   ; Reset the divider with 250 (0xFA)
+7b0a  8587    STA nmi_counter_250        ; and store it in the global
+7b0c  e68d    INC time_in_seconds        ; Increment our once-per-second counter
+7b0e  f8      SED                        ; Enable decimal mode to increment score
+7b0f  18      CLC                        ; Clear the carry for the addition
+7b10  a200    LDX #$00                   ; for x = 0, 1, 2
+7b12  a002    LDY #$02                   ; (although y is used for the counter)
+7b14  a908    LDA #$08                   ; add 8 to the score
+.label nmi_score_bcd_update:
+7b16  759e    ADC score_bcd_maybe[0],X   ; add `A` to the bcd score[X]
+7b18  959e    STA score_bcd_maybe[0],X   ; and store it back in bcd store[X]
+7b1a  a900    LDA #$00                   ; zero A
+7b1c  e8      INX                        ; x++
+7b1d  88      DEY                        ; y--
+7b1e  10f6    BPL nmi_score_bcd_update   ; if y > 0 do another digit
+.label nmi_time_bcd_update:
+7b20  a59c    LDA time_bcd[0]            ; get the first digit of the BCD timer
+7b22  18      CLC                        ; clear the carry
+7b23  6901    ADC #$01                   ; add one to the seconds timer
+7b25  c960    CMP #$60                   ; if it has not reached 60
+7b27  9002    BCC nmi_time_seconds_no_overflow ; then goto no overflow
+7b29  a900    LDA #$00                   ; otherwise zero the seconds
+.label nmi_time_seconds_no_overflow:
+7b2b  859c    STA time_bcd[0]            ; and store it back in the LSB
+7b2d  a59d    LDA time_bcd[1]            ; load the minutes of the timer
+7b2f  6900    ADC #$00                   ; and if the seconds overflowed 60, add it to the minutes
+7b31  859d    STA time_bcd[1]            ; store it back in the MSB
+.label not_a_second:
+7b33  d8      CLD                        ; exit decimal mode (whew)
+7b34  a522    LDA game_state_flags       ; read the current game state
+7b36  d00e    BNE L7b46                  ; if any bits are set,
+7b38  a574    LDA nmi_counter            ; game state is zero, so no game right now
+7b3a  a21f    LDX #$1f                   ; let's make the lights flash (1F == *all the lamps*)
+7b3c  4a      LSR                        ; shift the bottom bit from the nmi counter into carry
+7b3d  9002    BCC L7b41                  ; every other NMI turn on all the lamps
+7b3f  a210    LDX #$10                   ; and every odd one turn off all the lamps
 .label L7b41:
-7b41  a900    LDA #$00                   ;
-7b43  205f79  JSR io_lamps_set           ;
+7b41  a900    LDA #$00                   ; don't keep any of the old bits
+7b43  205f79  JSR io_lamps_set           ; and toggle the lamps
 .label L7b46:
-7b46  c68a    DEC delay_6                ;
-7b48  d006    BNE nmi_rti                ;
-7b4a  a906    LDA #$06                   ;
-7b4c  858a    STA delay_6                ;
-7b4e  e673    INC dvg_timer              ;
+7b46  c68a    DEC delay_6                ; divide the NMI counter by 6 for the vector generator timer
+7b48  d006    BNE nmi_rti                ; if it is not zero, just return
+7b4a  a906    LDA #$06                   ; reset the dvg divisor
+7b4c  858a    STA delay_6                ; store it back in the delay counter
+7b4e  e673    INC dvg_timer              ; and increment the vector generator timer
 .label nmi_rti:
 7b50  68      PLA                        ; Pop the CPU state from the stack
 7b51  a8      TAY                        ; -> Y

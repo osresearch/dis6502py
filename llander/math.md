@@ -254,16 +254,16 @@ produces a result with no multiplies or divides.  If space is available, a looku
 .func dec_to_bcd:
 79c6  8638    STX GenByte_0038           ; Store LSB of argument in gb38
 79c8  a900    LDA #$00                   ; Zero the bcd output
-79ca  8592    STA bcd_output             ; lsb
+79ca  8592    STA bcd_output[0]          ; lsb
 79cc  8593    STA bcd_output[1]          ; mid
 79ce  8594    STA bcd_output[2]          ; msb
 79d0  f8      SED                        ; turn on BCD mode
 .label dd_loop:
 79d1  0637    ASL GenByte_0037           ; D
 79d3  2638    ROL GenByte_0038           ; -O
-79d5  a592    LDA bcd_output             ; --U
-79d7  6592    ADC bcd_output             ; ---B
-79d9  8592    STA bcd_output             ; ----L
+79d5  a592    LDA bcd_output[0]          ; --U
+79d7  6592    ADC bcd_output[0]          ; ---B
+79d9  8592    STA bcd_output[0]          ; ----L
 79db  a593    LDA bcd_output[1]          ; -----E
 79dd  6593    ADC bcd_output[1]          ; ------D
 79df  8593    STA bcd_output[1]          ; -------A
@@ -274,7 +274,7 @@ produces a result with no multiplies or divides.  If space is available, a looku
 79e8  10e7    BPL dd_loop                ; if bits-- > 0 do it again
 79ea  a494    LDY bcd_output[2]          ; load the bcd output
 79ec  a693    LDX bcd_output[1]          ; into the registers
-79ee  a592    LDA bcd_output             ; for some callers who want that
+79ee  a592    LDA bcd_output[0]          ; for some callers who want that
 79f0  d8      CLD                        ; back into binary mode
 79f1  60      RTS                        ; return to caller
 ```

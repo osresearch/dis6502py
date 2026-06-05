@@ -41,7 +41,7 @@ the `A:X:Y` calling convention is different from some other functions that work 
 6464  8539    STA GenByte_0039           ; Cache the MSB of the argument into GenBytes 39
 6466  8638    STX GenByte_0038           ; ... the middle byte into 38
 6468  8437    STY GenByte_0037           ; ... the lowest byte into 37
-646a  a5ac    LDA fuel_tank              ; Load LSB of fuel
+646a  a5ac    LDA fuel_tank[0]           ; Load LSB of fuel
 646c  38      SEC                        ; Clear the carry (to start a SBC chain)
 646d  e537    SBC GenByte_0037           ; fuel_tank[0] - GenByte37
 646f  a8      TAY                        ; -> Y
@@ -57,13 +57,13 @@ the `A:X:Y` calling convention is different from some other functions that work 
 647f  a940    LDA #$40                   ; Store 0x40 indicting out of fuel
 6481  8597    STA fuel_state             ; into @fuel_state
 6483  a900    LDA #$00                   ; Write 00:00:00 into @fuel_tank
-6485  85ac    STA fuel_tank              ; no fuel
+6485  85ac    STA fuel_tank[0]           ; no fuel
 6487  85ad    STA fuel_tank[1]           ; so sad
 6489  85ae    STA fuel_tank[2]           ; burma shave
 648b  858d    STA time_in_seconds        ; stop the clock?
 648d  f00a    BEQ fuel_track_used        ; always taken
 .label fuel_no_underflow:
-648f  84ac    STY fuel_tank              ; Store LSB of the 3-byte remaining fuel
+648f  84ac    STY fuel_tank[0]           ; Store LSB of the 3-byte remaining fuel
 6491  86ad    STX fuel_tank[1]           ; Store the middle byte
 6493  85ae    STA fuel_tank[2]           ; Store the MSB of @fuel_tank back in the global
 6495  05ad    ORA fuel_tank[1]           ; Are both the middle and MSB zero?
@@ -73,9 +73,9 @@ the `A:X:Y` calling convention is different from some other functions that work 
 649a  a002    LDY #$02                   ; for x = 0,1,2
 649c  a200    LDX #$00                   ; starting with the LSB
 .label fuel_used_loop:
-649e  b5a1    LDA fuel_used,X            ; add the amount of fuel drained
+649e  b5a1    LDA fuel_used[0],X         ; add the amount of fuel drained
 64a0  7537    ADC GenByte_0037,X         ; to the global @fuel_used
-64a2  95a1    STA fuel_used,X            ; storing back in the global
+64a2  95a1    STA fuel_used[0],X         ; storing back in the global
 64a4  e8      INX                        ; x++
 64a5  88      DEY                        ; y--
 64a6  10f6    BPL fuel_used_loop         ; if y isn't negative, do the next byte
@@ -115,14 +115,14 @@ This is handled here:
 6b94  f049    BEQ rts_6bdf               ; then return immediately
 .func fuel_lost_to_crash:
 6b96  f8      SED                        ;
-6b97  a59e    LDA score_bcd_maybe        ;
+6b97  a59e    LDA score_bcd_maybe[0]     ;
 6b99  38      SEC                        ;
 6b9a  e5a2    SBC fuel_used[1]           ;
 6b9c  aa      TAX                        ;
-6b9d  a59f    LDA Z9f                    ;
+6b9d  a59f    LDA score_bcd_maybe[1]     ;
 6b9f  e5a3    SBC fuel_used[2]           ;
 6ba1  a8      TAY                        ;
-6ba2  a5a0    LDA Za0                    ;
+6ba2  a5a0    LDA score_bcd_maybe[2]     ;
 6ba4  e900    SBC #$00                   ;
 6ba6  d8      CLD                        ;
 6ba7  9036    BCC rts_6bdf               ;
