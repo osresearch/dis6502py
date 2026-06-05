@@ -131,10 +131,12 @@
 51ba vector_table_of_some_sort
 51e2 vectors_not_zoomed_51e2
 52fe vec_subroutines_zoomed_52fe
-53ee vec_subroutnies_53ee
-5416 vec_code_5416
-553c setup_time_display
+53ee twenty_subroutines word 20
+5576 setup_display_2 word 8
+5586 setup_display_3 word 9
+5598 setup_display_4 word 9
 55ae font_start
+55b2 setup_font word 6
 55be font_a word 8
 5668 font_l
 5702 font_x
@@ -162,12 +164,14 @@
 6235 game_state_reinit_maybe func
 6288 bzero_ship_state
 629e return_x_plus_1_or_10 func
-62a7 array_11_11_22_11
+62a7 mission_gravity byte 4
 62ab mission_button_handler func
 62bc ship_reset_saved_angle func
 62be ship_reset func
+62c6 ship_reset_bzero
 62dd mission_debounce_reset
-62e2 mission_lamps
+62e1 L62e1
+62e2 mission_lamps byte 4
 62e6 coin_inserted func
 6309 fuel_add_credit func
 6313 fuel_increase_limit_9999 func

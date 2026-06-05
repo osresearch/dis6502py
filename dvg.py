@@ -69,13 +69,13 @@ class DVG:
 			(word,) = struct.unpack("<H", self.rom[addr:addr+2])
 		return word
 
-	def process(self, ram):
+	def process(self, ram, do_jumps = True):
 		self.ram = ram
-		while self.execute(self.pc):
+		while self.execute(self.pc, do_jumps):
 			pass
 		return self.svg()
 
-	def execute(self, cmd):
+	def execute(self, cmd, do_jumps = True):
 		cmd = self.read16(self.pc)
 		if not cmd:
 			return False
@@ -109,9 +109,11 @@ class DVG:
 			return False
 		elif c == 0xC:
 			# JSR
-			self.stack.append(self.pc)
-			self.pc = ((cmd & 0xFFF) << 1)
-			self.trace("JSRL %04x (%04x)" % (self.pc, cmd))
+			new_pc = (cmd & 0xFFF) << 1
+			if do_jumps:
+				self.stack.append(self.pc)
+				self.pc = new_pc
+			self.trace("JSRL %04x" % (0x4000 + new_pc))
 		elif c == 0xD:
 			# RTS
 			self.trace("RTSL")
@@ -121,8 +123,10 @@ class DVG:
 			self.stack = self.stack[0:-1]
 		elif c == 0xE:
 			# JMP
-			self.pc = ((cmd & 0xFFF) << 1)
-			self.trace("JMPL %04x (%04x)" % (self.pc, cmd))
+			new_pc = (cmd & 0xFFF) << 1
+			if do_jumps:
+				self.pc = new_pc
+			self.trace("JMPL %04x" % (0x4000 + new_pc))
 		elif c == 0xF:
 			# SVEC
 			s1 = (cmd >> 11) & 0x1
@@ -158,4 +162,6 @@ if __name__ == "__main__":
 	dvg.s = 11
 	dvg.x = 0
 	dvg.y = 60
-	print(dvg.process(font))
+	#print(dvg.process(font))
+
+	#dvg.process(rom[0x553c

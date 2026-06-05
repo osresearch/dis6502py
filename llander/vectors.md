@@ -41,6 +41,7 @@ the vector generator to start executing from the RAM until it hits a `HLT` opcod
 .word 27 VecRamPtr ; Address of the end of the current commands for the DVG (starts at `0x4000`)
 ```
 
+### Fonts and number drawing
 
 ```
 ; Draw a BCD number without a leading zero
@@ -136,15 +137,37 @@ not bytes, so the `CADF` command is a subroutine call to word `0xADF`, DVG addre
 
 Using our emulator for the DVG, we can render out this font table as an SVG:
 
-<!-- .dvg 57a4 92 1024 32 -->
+<!-- .dvg 57a4 47 1024 32 -->
 ![SVG rendering of the font](images/font.svg)
 
 Each character is it's own DVG subroutine.  For example, here is the routine that draws `A` -- you can see
 that it consists of a few short vectors (command `F`) and then a `RTSL` (command `D`) to return:
 
 ```
-.word 55be font_a 8 ; Character "A"
-.dvg_parse 55be 16
+.dvg_parse 55be font_a 8 ; Character "`A`"
 ```
 
+### Ships
 
+```
+.word 53ee twenty_subroutines 20 ; Twenty subroutine calls, maybe ships or stars?
+.dvg 53ee 20 1024 1024 1
+```
+
+### Displays
+
+Some of the displays are also generated this way.
+
+```
+```
+
+which calls these subroutines:
+
+```
+.dvg_parse 55b2 setup_font 6 ; ???
+.dvg_parse 5576 setup_display_2 8 ; ???
+.dvg_parse 5586 setup_display_3 9 ; ???
+.dvg_parse 5598 setup_display_4 9 ; ???
+```
+
+##

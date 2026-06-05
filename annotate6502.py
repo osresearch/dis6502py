@@ -349,6 +349,7 @@ class Annotator:
 		name = m[2]
 		array_len = int(m[3],0) if m[3] else None
 		comment = m[4]
+
 		self.dis.add_symbol(addr, name, data_type, array_len)
 
 		if self.block_comment != '':
@@ -445,13 +446,13 @@ class Annotator:
 		scale = 11
 
 		if len(words) > 1:
-			length = int(words[1], 0)
+			length = int(words[1], 0) * 2
 		if len(words) > 2:
 			width = int(words[2], 0)
 		if len(words) > 3:
 			height = int(words[3], 0)
 		if len(words) > 4:
-			scale = int(words[3], 0)
+			scale = int(words[4], 0)
 		cmd = self.dis.ram[addr:addr+length]
 
 		dvg = DVG(self.dvg_rom, width=width, height=height)
@@ -462,11 +463,17 @@ class Annotator:
 		print(dvg.process(cmd))
 
 	def dvg_parse(self, words):
+		if not self.dvg_rom:
+			# if we haven't initialized it yet, create a DVG using the loaded binary
+			self.dvg_rom = self.dis.ram[0x4800:0x6000]
 		addr = int(words[0], 16)
-		length = int(words[1], 0) * 2
+		name = words[1]
+		length = int(words[2], 0)
 		dvg = DVG(self.dvg_rom)
-		ram = self.dis.ram[addr:addr+length]
-		dvg.process(ram)
+		ram = self.dis.ram[addr:addr+2*length]
+		dvg.process(ram, do_jumps=False)
+
+		self.add_data("word", words)
 		print("<ul><li>", "<li>".join(dvg.trace_log), "</ul>")
 
 
