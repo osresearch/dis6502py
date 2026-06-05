@@ -68,15 +68,15 @@ from `0xFFa` and jump to that address
 7aeb  4ceb7a  JMP wait_for_watchdog      ; Infinite loop, waiting for the watchdog to bark
 .label nmi_check_coins:
 7aee  20d378  JSR CheckCoinsInserted     ; Has the player inserted any new coins?
-7af1  9006    BCC L7af9                  ;
-7af3  a220    LDX #$20                   ;
-7af5  a9ff    LDA #$ff                   ;
-7af7  d004    BNE L7afd                  ;
-.label L7af9:
-7af9  a9df    LDA #$df                   ;
-7afb  a200    LDX #$00                   ;
-.label L7afd:
-7afd  205f79  JSR io_outlatch_set        ;
+7af1  9006    BCC nmi_no_coins           ; Carry clear == no coins, goto
+7af3  a220    LDX #$20                   ; set coin counter output lamp
+7af5  a9ff    LDA #$ff                   ; keep all the other lamps the same
+7af7  d004    BNE nmi_update_lights      ; (always taken)
+.label nmi_no_coins:
+7af9  a9df    LDA #$df                   ; unset coin counter output lamp
+7afb  a200    LDX #$00                   ; also reset the rest of them
+.label nmi_update_lights:
+7afd  205f79  JSR io_lamps_set           ; update the lamps based on if a coin was received
 7b00  2422    BIT game_state_flags       ;
 7b02  502f    BVC L7b33                  ;
 7b04  c687    DEC nmi_counter_250        ;
@@ -118,7 +118,7 @@ from `0xFFa` and jump to that address
 7b3f  a210    LDX #$10                   ;
 .label L7b41:
 7b41  a900    LDA #$00                   ;
-7b43  205f79  JSR io_outlatch_set        ;
+7b43  205f79  JSR io_lamps_set           ;
 .label L7b46:
 7b46  c68a    DEC delay_6                ;
 7b48  d006    BNE nmi_rti                ;

@@ -27,5 +27,61 @@ The lamps and sounds are also memory mapper peripherals.  Eight output pins are 
 one address.  The system caches the last value to avoid read-modify-write problems with this location.
 
 ```
-.byte 3200 IO_out_latch			; Lamps 0 - 3, Start, Select, Coin enable
+; --------0 Attract lamp 0
+; -------1- Attract lamp 1
+; ------2-- Attract lamp 2
+; -----3--- Attract lamp 3
+; ----4---- Start/select LEDs
+; ---5----- Coin counter enable
+.byte 3200 IO_output_latch			; Lamps 0 - 3, Start, Select, Coin enable
+
+; -----210 Thrust intensity
+; ----3--- Thrust pitch
+; --54--- Tone intensity
+.byte 3c00 IO_audio_latch			; Audio output control
+.byte 3e00 IO_audio_reset			; Turn off the audio device
+```
+
+To avoid read-modify-write cycles when updating the lamps or audio devices, the game keeps track
+of the last value written in a global variable and uses that as its cache.  The functions take two
+parameters and act as a SET and RESET value.
+
+```
+.byte 88 lamps_cache ; Cache of last value written to the lamp hardware
+.byte 89 audio_cache ; Cache of last value written to the audio hardware
+.byte 3c io_genbyte ; Temp variable for the io functions
+
+```
+; Set the audio output hardware
+;
+; A = keep_bits
+; X = set_bits
+;
+; last_set = set_bits
+; cache = (keep & cache) | set_bits
+; output = cache
+
+.func io_audio_set:
+7953  2589    AND audio_cache            ; Mask the last written value to preserve the keep bits in `A`
+7955  863c    STX io_genbyte             ; Store the set bits from `X` in the temp variable
+7957  053c    ORA io_genbyte             ; Set the set bits in `A`
+7959  8d003c  STA IO_audio_latch         ; Write the new set bits and the kept bits out to the audio hardware
+795c  8589    STA audio_cache            ; Store this last written value in the cache
+795e  60      RTS                        ; And we're done!
+
+; Set the lamps hardware
+;
+; A = keep_bits
+; X = set_bits
+;
+; last_set = set_bits
+; cache = (keep & cache) | set_bits
+; output = cache
+.func io_lamps_set:
+795f  2588    AND lamps_cache            ; Mask the last written value to preserve the keep bits in `A`
+7961  863c    STX io_genbyte             ; Store the set bits from `X` in the temp variable
+7963  053c    ORA io_genbyte             ; Set the set bits in `A`
+7965  8d0032  STA IO_output_latch        ; Write the new set bits and the kept bits out to the lamp hardware
+7968  8588    STA lamps_cache            ; Store this last written value in the cache
+796a  60      RTS                        ; And we're done!
 ```

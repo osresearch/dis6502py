@@ -29,7 +29,7 @@
 0039 GenByte_0039
 003a GenByte_003a
 003b GenByte_003b
-003c IO_outlatch_last_set
+003c io_genbyte
 003d GenByte_003c
 003e GenByte_003e
 003f GenByte_003f
@@ -75,8 +75,8 @@
 0085 thrust_something_counter
 0086 FrameCounter
 0087 nmi_counter_250
-0088 IO_outlatch_cache
-0089 IO_audiolatch_cache
+0088 lamps_cache
+0089 audio_cache
 008a delay_6
 008b vec_src_offst_maybe
 008c vecgen_offset_something
@@ -118,10 +118,10 @@
 2803 IO_dsw1_RightCoin
 2c00 IO_thrust
 3000 IO_VecGenGo
-3200 IO_out_latch
+3200 IO_output_latch
 3400 IO_watchdog
-3c00 IO_sounds
-3e00 IO_snd_reset
+3c00 IO_audio_latch
+3e00 IO_audio_reset
 4000 IO_vecgen_ram
 4bbc zoomed_in_settings_4bbc
 4e9e debris_subroutines_4e9e
@@ -363,8 +363,8 @@
 7938 DoNextCoinMech
 794d NextValidCoin_maybe
 7951 EndCoinCheck
-7953 audiolatch_set func
-795f io_outlatch_set func
+7953 io_audio_set func
+795f io_lamps_set func
 796b coin_credit_configure func
 799b CoinMultTbl
 799f draw_insert_coin_screen func
@@ -389,8 +389,8 @@
 7ad6 nmi_check_dvg
 7aeb wait_for_watchdog
 7aee nmi_check_coins
-7af9 L7af9
-7afd L7afd
+7af9 nmi_no_coins
+7afd nmi_update_lights
 7b16 L7b16
 7b2b L7b2b
 7b33 L7b33

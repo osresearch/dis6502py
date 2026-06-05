@@ -23,7 +23,7 @@ are discussed in the button handling section.
 ;
 ; Note that only the two coin slots are used (0 and 2)
 ;
-; Returns non-zero if a coin was detected.
+; Returns a set carry flag if a coin was detected.
 ;
 .func CheckCoinsInserted:
 78d3  a202    LDX #$02                   ; for each coin slot = 2, 0: (middle one is ignored)
