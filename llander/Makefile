@@ -7,6 +7,7 @@ llander.sym: FORCE
 		buttons.md \
 		rotation.md \
 		thrust.md \
+		vectors.md \
 		zeropage.md \
 		coins.md \
 		tick.md \

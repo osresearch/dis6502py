@@ -15,8 +15,7 @@
 0023 mission_difficulty
 0024 mission_debounce
 0025 start_game_debounce
-0026 diag_step_debounce
-0027 VecRamPtr
+0026 VecRamPtr word
 0029 vecdata_ptr_start
 002b current_character_ptr
 002d VecRamPtr_copy
@@ -117,7 +116,7 @@
 2802 IO_dsw1_2
 2803 IO_dsw1_RightCoin
 2c00 IO_thrust
-3000 IO_VecGenGo
+3000 IO_DMAGO
 3200 IO_output_latch
 3400 IO_watchdog
 3c00 IO_audio_latch
