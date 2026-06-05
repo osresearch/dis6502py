@@ -372,7 +372,7 @@ class Annotator:
 					hexdump.append("%04x" % self.dis.read16(addr + 2*i))
 				else:
 					hexdump.append("%02x" % self.dis.read8(addr + i))
-			hexdump = ' ' + (','.join(hexdump))
+			hexdump = ' ' + (', '.join(hexdump))
 
 		if array_len > 1:
 			array_text = "[%d]" % (array_len)

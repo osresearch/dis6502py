@@ -15,7 +15,7 @@
 0023 mission_difficulty
 0024 mission_debounce
 0025 start_game_debounce
-0026 VecRamPtr word
+0027 VecRamPtr word
 0029 vecdata_ptr_start
 002b current_character_ptr
 002d VecRamPtr_copy
@@ -145,7 +145,7 @@
 5732 font_2
 5742 font_3
 5794 font_9
-57a2 CharPtrTbl
+57a2 CharPtrlTbl word 47
 5800 string_table_lang_offset
 5804 string_table_french
 5834 string_table_spanish
@@ -343,6 +343,7 @@
 781e ChkSetDigitPntr
 7823 DisplayDigit
 7838 VecPtrUpdate func
+7842 VecPtr_no_overflow
 7843 CalcDebrisPos func
 7859 NoIncX
 785a ChkYDebris

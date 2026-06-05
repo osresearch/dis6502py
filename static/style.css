@@ -15,6 +15,7 @@ p { margin-left: 2em; margin-right: 2em; }
 /* Make an 80 column line of addr, bytes, instr, comment */
 .addr { width: 4em; padding-left: 2em; }
 .bytes { width: 4em; }
+.hexdump { width: 25em; }
 .instr { width: 20em; }
 .comment { display: inline-block; width: 45em; }
 
