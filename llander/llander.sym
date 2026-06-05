@@ -17,7 +17,7 @@
 0025 start_game_debounce
 0027 VecRamPtr word
 0029 vecdata_ptr_start
-002b current_character_ptr
+002b draw_string_ptr word
 002d VecRamPtr_copy
 002f VecRamPtr_copy2
 0031 vec_letter_ptr_something
@@ -147,7 +147,7 @@
 5732 font_2
 5742 font_3
 5794 font_9
-57a2 CharPtrlTbl word 47
+57a2 CharPtrTbl word 47
 5800 string_table_lang_offset
 5804 string_table_french
 5834 string_table_spanish
@@ -242,14 +242,14 @@
 687e draw_push_start_screen func
 689e draw_out_of_fuel_screen func
 68d6 draw_level_over_screen func
-692b string_table
+692b string_table word 33
 696d string_table_fixup_something_else
 6979 str_LOW_ON_FUEL
 6984 str_OUT_OF_FUEL
 698f str_LOST
 6993 str_FUEL_UNITS
 699f str_INSERT_COINS
-69ab str_PUSH_START
+69ab str_PUSH_START byte 10
 69b5 str_SELECT_OPTION
 69c2 str_POINTS
 69c9 str_450
@@ -378,7 +378,7 @@
 79f2 DrawString func
 79f8 copy_next_vec_instruction
 7a1e increment_char_ptr
-7a28 return
+7a28 draw_string_return
 7a29 draw_lost_fuel_units_message func
 7a32 WriteText_newline func
 7a34 WriteText_wrapper func

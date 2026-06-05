@@ -104,9 +104,9 @@ the vector generator to start executing from the RAM until it hits a `HLT` opcod
 7824  0a      ASL                        ; Multiple the digit by 2, since the DVG uses 16-bit words
 7825  a000    LDY #$00                   ; `Y` is the offset for the vector ram pointer
 7827  aa      TAX                        ; `X = A`
-7828  bda257  LDA CharPtrlTbl[0],X       ; Read the low-byte of the font command
+7828  bda257  LDA CharPtrTbl[0],X        ; Read the low-byte of the font command
 782b  9127    STA (VecRamPtr),Y          ; Store it in the vector pointer at the current location
-782d  bda357  LDA CharPtrlTbl_high[0],X  ; Read the high-byte of the font command
+782d  bda357  LDA CharPtrTbl_high[0],X   ; Read the high-byte of the font command
 7830  c8      INY                        ; Increment `Y`
 7831  9127    STA (VecRamPtr),Y          ; Store the high byte at the next location
 7833  203878  JSR VecPtrUpdate           ; Add `Y` to the vector ram pointer
@@ -132,7 +132,7 @@ not bytes, so the `CADF` command is a subroutine call to word `0xADF`, DVG addre
 
 ```
 ; The characters are stored in the order ' ', 0 - 9, A - Z
-.word 57a2 CharPtrlTbl 47 ; Subroutine calls for each font character
+.word 57a2 CharPtrTbl 47 ; Subroutine calls for each font character
 ```
 
 Using our emulator for the DVG, we can render out this font table as an SVG:
@@ -146,6 +146,69 @@ that it consists of a few short vectors (command `F`) and then a `RTSL` (command
 ```
 .dvg_parse 55be font_a 8 ; Character "`A`"
 ```
+
+### Strings
+
+Text strings are drawn as a sequence of DVG subroutine calls, each character is a DVG `JSRL` subroutine call
+copied from the @CharPtrTbl to the vector generator RAM.  The strings are stored not in ASCII, but with
+the offsets into the font table of the character subroutine call, and the last character in the string
+has the high bit set as a terminator.
+
+```
+.word 2b draw_string_ptr ; Pointer to character in a string being copied to vector ram
+```
+
+```
+; DrawString
+; `X:Y` Pointer to the string to write, terminated with 0x80 on the last character
+; Copies the font subroutines to @VecRamPtr
+; Sets @draw_string_ptr to point to the end of the string
+.func DrawString:
+79f2  862c    STX draw_string_ptr_high   ; Store the pointer high
+79f4  842b    STY draw_string_ptr        ; and low bytes
+79f6  a900    LDA #$00                   ; for i = 0 ... strlen * 2
+.label copy_next_vec_instruction:
+79f8  4a      LSR                        ; halve i since we're copying 16-bit `JSRL` vector subroutine
+79f9  a8      TAY                        ; calls for each letter and it is going up by two each byte
+79fa  b12b    LDA (draw_string_ptr),Y    ; Read low byte from the string
+79fc  8539    STA GenByte_0039           ; Cache it in gen byte
+79fe  297f    AND #$7f                   ; Strings are terminated by setting the high bit
+7a00  aa      TAX                        ; so strip the high bit from the letter
+7a01  98      TYA                        ; move y back into a
+7a02  0a      ASL                        ; and double it back to by index by words
+7a03  a8      TAY                        ; and back into y (what a dance)
+7a04  bda257  LDA CharPtrTbl[0],X        ; Index into the font table to get the low byte
+7a07  9127    STA (VecRamPtr),Y          ; and store it in the vector ram ptr
+7a09  c8      INY                        ; next byte...
+7a0a  bda357  LDA CharPtrTbl_high[0],X   ; store the high byte of the font into the vector ram ptr
+7a0d  9127    STA (VecRamPtr),Y          ; indexed by y
+7a0f  c8      INY                        ; and increment y again since we moved two bytes
+7a10  98      TYA                        ; and back into a
+7a11  2439    BIT GenByte_0039           ; Test the cached version of the letter
+7a13  10e3    BPL copy_next_vec_instruction ; If positive, keep copying
+7a15  18      CLC                        ; Clear carry
+7a16  6527    ADC VecRamPtr              ; Add number of bytes written to vector ram
+7a18  8527    STA VecRamPtr              ; to the @VecRamPtr
+7a1a  9002    BCC increment_char_ptr     ; Did the low byte overflow?
+7a1c  e628    INC VecRamPtr_high         ; if so increment the high byte as well
+.label increment_char_ptr:
+7a1e  98      TYA                        ; Copy number of bytes copied to vector ram back to A
+7a1f  4a      LSR                        ; Divide it by two to get the number of characters in the string
+7a20  652b    ADC draw_string_ptr        ; Increase the character pointer
+7a22  852b    STA draw_string_ptr        ; so it points to the end of the string
+7a24  9002    BCC draw_string_return     ; did the low byte overflow?
+7a26  e62c    INC draw_string_ptr_high   ; if so increment the high byte as well
+.label draw_string_return:
+7a28  60      RTS                        ; return to the caller
+```
+
+There are 33 strings in the game and they are all indexed by number. For English the table has the pointers:
+
+```
+.word 692b string_table 33 ; Pointers to the English strings
+.byte 69ab str_PUSH_START 10 ; "PUSH START"
+```
+
 
 ### Ships
 
