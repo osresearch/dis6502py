@@ -8,6 +8,7 @@ llander.sym: FORCE
 		rotation.md \
 		thrust.md \
 		vectors.md \
+		strings.md \
 		zeropage.md \
 		coins.md \
 		tick.md \
