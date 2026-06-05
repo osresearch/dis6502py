@@ -135,7 +135,7 @@
 5416 vec_code_5416
 553c setup_time_display
 55ae font_start
-55be font_a
+55be font_a word 8
 5668 font_l
 5702 font_x
 570c font_y

@@ -8,11 +8,17 @@ import sys
 from hashlib import sha256
 
 class DVG:
-	def __init__(self, rom):
+	def __init__(self, rom, width=1024, height=1024):
 		# ROM starts at 0x800
 		self.rom = rom
 		self.debug = False
 		self.reset()
+
+		self.d = draw.Drawing(
+			width, height,
+			origin=(0,0),
+			style="background-color:black",
+		)
 
 	def reset(self):
 		self.pc = 0
@@ -20,6 +26,9 @@ class DVG:
 		self.y = 0
 		self.s = 3
 		self.stack = []
+
+	def svg(self):
+		return self.d.as_svg()
 
 	def trace(self, *s):
 		if self.debug:
@@ -37,7 +46,7 @@ class DVG:
 			self.d.append(draw.Lines(
 				self.x, self.y, nx, ny,
 				fill='none',
-				stroke_width=1,
+				stroke_width=2,
 				stroke='#%01x%01x%01x' % (bright,bright,bright),
 			))
 		else:
@@ -59,16 +68,10 @@ class DVG:
 		return word
 
 	def process(self, ram):
-		self.d = draw.Drawing(
-			1024, 1024,
-			origin=(0,0),
-			style="background-color:black",
-			id_prefix=sha256(ram).hexdigest()[0:8],
-		)
 		self.ram = ram
 		while self.execute(self.pc):
 			pass
-		return self.d.as_svg()
+		return self.svg()
 
 	def execute(self, cmd):
 		cmd = self.read16(self.pc)
@@ -142,12 +145,12 @@ if __name__ == "__main__":
 	rom = open("llander/llander-0x4800.bin", "rb").read()
 	rom = rom[:0x6000-0x4800]
 
-	dvg = DVG(rom)
+	dvg = DVG(rom, width=1024, height=64)
 
-	font_addr = 0x57a2 - 0x4800
-	font = rom[font_addr:font_addr+32]
+	font_addr = 0x57a4 - 0x4800
+	font = rom[font_addr:font_addr+92]
 
-	dvg.s = 12
-	dvg.x = 512
-	dvg.y = 512
+	dvg.s = 11
+	dvg.x = 0
+	dvg.y = 60
 	print(dvg.process(font))

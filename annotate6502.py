@@ -7,6 +7,7 @@ import sys
 import re
 from dis6502 import Dis6502, Flags
 from opcodes import opcode_table, OpcodeFlags
+from dvg import DVG
 
 header = """<!doctype html>
 <html><head>
@@ -34,6 +35,8 @@ class Annotator:
 		self.last_name = None
 		self.block_comment = ''
 		self.block_comments = {}
+		self.dvg = None
+		self.dvg_rom = None
 
 	def warn(self, s):
 		print(f"{self.filename}:{self.line_num}: {'%04x' % (self.addr if self.addr else 0x0)} {s}", file=sys.stderr)
@@ -118,6 +121,8 @@ class Annotator:
 			self.add_data("byte", words[1:])
 		elif words[0] == ".word":
 			self.add_data("word", words[1:])
+		elif words[0] == ".dvg":
+			self.process_dvg(words[1:])
 		elif words[0][0] == ".":
 			raise RuntimeError("Unknown directive " + words[0])
 		elif self.mode == "dis" or self.mode == "func" or self.mode == "label":
@@ -424,6 +429,35 @@ class Annotator:
 
 		print("OPS %d comments / %d instructions %.2f%%" % (op_comments, total_ops, 100.0 * op_comments / total_ops), file=sys.stderr)
 		print("DAT %d comments / %d data bytes %.2f%%" % (data_comments, total_data, 100.0 * data_comments / total_data), file=sys.stderr)
+
+	# Generate an inline SVG of the Vector Generator output for some memory
+	# dvg addr width height
+	def process_dvg(self, words):
+		if not self.dvg_rom:
+			# if we haven't initialized it yet, create a DVG using the loaded binary
+			self.dvg_rom = self.dis.ram[0x4800:0x6000]
+		addr = int(words[0], 16)
+		length = 2
+		width = 1024
+		height = 1024
+		scale = 11
+
+		if len(words) > 1:
+			length = int(words[1], 0)
+		if len(words) > 2:
+			width = int(words[2], 0)
+		if len(words) > 3:
+			height = int(words[3], 0)
+		if len(words) > 4:
+			scale = int(words[3], 0)
+		cmd = self.dis.ram[addr:addr+length]
+
+		dvg = DVG(self.dvg_rom, width=width, height=height)
+		dvg.s = scale
+		dvg.x = 0
+		dvg.y = height - 2
+		print("DVG %04x+%04x" % (addr, length), file=sys.stderr)
+		print(dvg.process(cmd))
 
 ann = Annotator()
 for file in sys.argv[1:]:

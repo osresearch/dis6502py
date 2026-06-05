@@ -125,10 +125,25 @@ the vector generator to start executing from the RAM until it hits a `HLT` opcod
 7842  60      RTS                        ; Return to the caller
 ```
 
-The font table is stored in the vector generator's ROM:
+The font table is stored in the vector generator's ROM; note that all of their addresses are offset by `0x4000`
+since it is mapped into the 6502 at `0x4000` but at `0x0000` in the DVG, and that all of the addresses are *words*,
+not bytes, so the `CADF` command is a subroutine call to word `0xADF`, DVG address `0x15be`, or 6502 address `0x55be`
 
 ```
 ; The characters are stored in the order ' ', 0 - 9, A - Z
 .word 57a2 CharPtrlTbl 47 ; Subroutine calls for each font character
 ```
+
+Using our emulator for the DVG, we can render out this font table as an SVG:
+
+<!-- .dvg 57a4 92 1024 32 -->
+![SVG rendering of the font](images/font.svg)
+
+Each character is it's own DVG subroutine.  For example, here is the routine that draws `A` -- you can see
+that it consists of a few short vectors (command `F`) and then a `RTSL` (command `D`) to return:
+
+```
+.word 55be font_a 8 ; Character "A"
+```
+
 
