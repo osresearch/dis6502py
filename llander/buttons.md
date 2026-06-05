@@ -20,9 +20,7 @@ when they are pressed.
 There are also three coin slots mapped into the same memory region:
 
 ```
-.byte 2401 IO_in1_coin3			; Memory mapped active high coin slot
-.byte 2402 IO_in1_coin2			; Memory mapped active high coin slot
-.byte 2403 IO_in1_coin1			; Memory mapped active high coin slot
+.byte 2401 IO_in1_coin 3		; Three memory mapped active high coin slots
 ```
 
 The lamps and sounds are also memory mapper peripherals.  Eight output pins are mapped to the

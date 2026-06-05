@@ -98,18 +98,16 @@
 00ac fuel_tank byte 3
 00b0 math_something
 00b2 ValidCoins
-00b3 WaitCoinTimers
-00b4 SlamTimer
+00b3 WaitCoinTimer_0
+00b4 WaitCoinTimer_2
 00b6 NumCredits_maybe
-00b7 CoinDropTimers
-00ba NmiCounter
+00b7 CoinDropTimers byte 3
+00ba coin_check_counter
 00c1 state_c1
 00c2 state_c2
 2000 IO_in0
 2400 IO_in1_start
-2401 IO_in1_coin3
-2402 IO_in1_coin2
-2403 IO_in1_coin1
+2401 IO_in1_coin byte 3
 2404 IO_in1_select
 2405 IO_in1_abort
 2406 IO_in1_yaw_right
