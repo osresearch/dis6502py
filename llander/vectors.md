@@ -202,11 +202,43 @@ has the high bit set as a terminator.
 7a28  60      RTS                        ; return to the caller
 ```
 
-There are 33 strings in the game and they are all indexed by number. For English the table has the pointers:
+There are 33 strings in the game and they are all indexed by number. For English the table has the pointers,
+note that string number 17 is an index into string 16 to reuse the word `DESTROYED`.
 
 ```
 .ptr 692b string_table 33 ; Pointers to the English strings
-.byte 69ab str_PUSH_START 10 ; "PUSH START"
+.byte 69ab str_PUSH_START 10 ; 0 "PUSH START"
+.byte 6979 str_LOW_ON_FUEL 11 ; 1 "LOW ON FUEL"
+.byte 6984 str_OUT_OF_FUEL 11 ; 2 "OUT OF FUEL"
+.byte 698f str_LOST 4 ; 3 "LOST"
+.byte 699f str_INSERT_COINS 12 ; 4 "INSERT COINS"
+.byte 69dd str_PER_COIN 8 ; 5 "PER COIN"
+.byte 69e6 str_AUXILIARY_FUEL_TANKS_DESTROYED 30 ; 6 "AUXILIARY FUEL TANKS DESTROYED"
+.byte 6a04 str_CONGRATULATIONS 15 ; 7 "CONGRATULATIONS"
+.byte 6a13 str_YOU_LANDED_HARD 15 ; 8 "YOU LANDED HARD"
+.byte 6a22 str_THAT_WAS_A_GREAT_LANDING 24 ; 9 "THAT WAS A GREAT LANDING"
+.byte 6a3a str_THE_EAGLE_HAS_LANDED 20 ; 10 "THE EAGLE HAS LANDED"
+.byte 6a4e str_THE_COLUMBIA_HAS_LANDED 23 ; 11 "THE COLUMBIA HAS LANDED"
+.byte 6a65 str_YOU_HAVE_LANDED 15 ; 12 "YOU HAVE LANDED"
+.byte 6a74 str_LIFE_SUPPORT_IS_GONE 20 ; 13 "LIFE SUPPORT IS GONE"
+.byte 6a88 str_YOUR_TRIP_IS_ONE_WAY 20 ; 14 "YOUR TRIP IS ONE WAY"
+.byte 6a9c str_YOU_ARE_HOPELESSLY_MAROONED 27 ; 15 "YOU ARE HOPELESSLY MAROONED"
+.byte 6ab7 str_COMMUNICATION_SYSTEM_DESTROYED 30 ; 16 "COMMUNICATION SYSTEM DESTROYED"
+.byte 6ad5 str_YOU_CREATED_A_TWO_MILE_CRATER 29 ; 18 "YOU CREATED A TWO MILE CRATER"
+.byte 6af2 str_YOU_JUST_DESTROYED_A_100_MEGABUCK_LANDER 40 ; 19 "YOU JUST DESTROYED A 100 MEGABUCK LANDER"
+.byte 6b1a str_THERE_WERE_NO_SURVIVORS 23 ; 20 "THERE WERE NO SURVIVORS"
+.byte 69c2 str__POINTS 7 ; 21 " POINTS"
+.byte 69b5 str_SELECT_OPTION 13 ; 22 "SELECT OPTION"
+.byte 6993 str__FUEL_UNITS_ 12 ; 23 " FUEL UNITS "
+.byte 69e5 str_X 1 ; 24 "X"
+.byte 69c9 str_450 3 ; 25 "450"
+.byte 69cc str_600 3 ; 26 "600"
+.byte 69cf str_750 3 ; 27 "750"
+.byte 69d2 str_900 3 ; 28 "900"
+.byte 64ff str_1100 4 ; 29 "1100"
+.byte 6503 str_1300 4 ; 30 "1300"
+.byte 69d5 str_1550 4 ; 31 "1550"
+.byte 69d9 str_1800 4 ; 32 "1800"
 ```
 
 

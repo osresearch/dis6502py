@@ -210,8 +210,8 @@
 649e fuel_used_loop
 64a8 fuel_drain_done
 64aa abort_procedure_update func
-64ff str_1100
-6503 str_1300
+64ff str_1100 byte 4
+6503 str_1300 byte 4
 6507 svec_right_shit
 6509 ship_vel_decay func
 652d dvg_wait_done func
@@ -244,37 +244,36 @@
 68d6 draw_level_over_screen func
 692b string_table ptr 33
 696d string_table_fixup_something_else
-6979 str_LOW_ON_FUEL
-6984 str_OUT_OF_FUEL
-698f str_LOST
-6993 str_FUEL_UNITS
-699f str_INSERT_COINS
+6979 str_LOW_ON_FUEL byte 11
+6984 str_OUT_OF_FUEL byte 11
+698f str_LOST byte 4
+6993 str__FUEL_UNITS_ byte 12
+699f str_INSERT_COINS byte 12
 69ab str_PUSH_START byte 10
-69b5 str_SELECT_OPTION
-69c2 str_POINTS
-69c9 str_450
-69cc str_600
-69cf str_750
-69d2 str_900
-69d5 str_1550
-69d9 str_1800
-69dd str_PER_COIN
-69e5 str_X
-69e6 str_AUX_FUEL_TANKS_DESTROYED
-6a04 str_CONGRATULATIONS
-6a13 str_YOU_LANDED_HARD
-6a22 str_THAT_WAS_A_GREAT_LANDING
-6a3a str_THE_EAGLE_HAS_LANDED
-6a4e str_THE_COLUMBIA_HAS_LANDED
-6a65 str_YOU_HAVE_LANDED
-6a74 str_LIFE_SUPPORT_IS_GONE
-6a88 str_YOUR_TRIP_IS_ONE_WAY
-6a9c str_YOU_ARE_MAROONED
-6ab7 str_COMM_SYSTEM_DESTROYED
-6acc str_DESTROYED
-6ad5 str_YOU_CREATED_A_TWO_MILE_CRATER
-6af2 str_YOU_DESTROYED_A_100_MEGABUCK_LANDER
-6b1a str_NO_SURVIVORS
+69b5 str_SELECT_OPTION byte 13
+69c2 str__POINTS byte 7
+69c9 str_450 byte 3
+69cc str_600 byte 3
+69cf str_750 byte 3
+69d2 str_900 byte 3
+69d5 str_1550 byte 4
+69d9 str_1800 byte 4
+69dd str_PER_COIN byte 8
+69e5 str_X byte 1
+69e6 str_AUXILIARY_FUEL_TANKS_DESTROYED byte 30
+6a04 str_CONGRATULATIONS byte 15
+6a13 str_YOU_LANDED_HARD byte 15
+6a22 str_THAT_WAS_A_GREAT_LANDING byte 24
+6a3a str_THE_EAGLE_HAS_LANDED byte 20
+6a4e str_THE_COLUMBIA_HAS_LANDED byte 23
+6a65 str_YOU_HAVE_LANDED byte 15
+6a74 str_LIFE_SUPPORT_IS_GONE byte 20
+6a88 str_YOUR_TRIP_IS_ONE_WAY byte 20
+6a9c str_YOU_ARE_HOPELESSLY_MAROONED byte 27
+6ab7 str_COMMUNICATION_SYSTEM_DESTROYED byte 30
+6ad5 str_YOU_CREATED_A_TWO_MILE_CRATER byte 29
+6af2 str_YOU_JUST_DESTROYED_A_100_MEGABUCK_LANDER byte 40
+6b1a str_THERE_WERE_NO_SURVIVORS byte 23
 6b32 ship_compute_accel_xy func
 6b53 flip_to_other_half
 6b71 fuel_drain_thrust func

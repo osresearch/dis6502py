@@ -412,7 +412,7 @@ class Dis6502:
 				pass
 			elif array_flag:
 				if el_addr in self.arrays or el_addr in self.names:
-					raise RuntimeError("%04x %s %d: overlaps existing variable at %04x?" % (addr, name, array_size, el_addr))
+					raise RuntimeError("%04x %s %d: overlaps existing variable at %s %04x?" % (addr, name, array_size, self.name(el_addr), el_addr))
 				self.arrays[el_addr] = addr
 			else:
 				if self.flags[el_addr] & Flags.ARRAY:
@@ -432,7 +432,7 @@ class Dis6502:
 			# add a data reference for each ptr word
 			if is_ptr and i % 2 == 0:
 				dest = self.read16(el_addr)
-				print("ptr ref %04x -> %04x" % (addr, dest), file=sys.stderr)
+				#print("ptr ref %04x -> %04x" % (addr, dest), file=sys.stderr)
 				self.save_ref(addr, dest)
 
 		return True
