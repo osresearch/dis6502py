@@ -244,6 +244,40 @@ XY acceleration (stored as 17-bit signed magnitude), the velocity and position
 .word 07 ship_pos 2 ; Ship position 16-bit
 ```
 
+```
+.byte 62a7 mission_gravity 4 ; Gravity settings for the different missions
+.byte 62e2 mission_lamps 4 ; Bitmask of lamps to illuminate based on the mission difficulty
+```
+
+```
+; Reset the ship but keep the angle the same
+.func ship_reset_saved_angle:
+62bc  a502    LDA ship_angle_modulo      ; Load the current ship angle and fall through
+
+; Reset the ship to a new angle and re-read the mission parameters
+; `A`: Ship's starting angle from 0 - 31
+.func ship_reset:
+62be  0a      ASL                        ; Multiply the small angle
+62bf  0a      ASL                        ; by four
+62c0  8567    STA ship_angle_high        ; and store that in the high byte of the ship angle
+62c2  a900    LDA #$00                   ; Memset the yaw_rate, yaw_slow and yaw_nonzero
+62c4  a203    LDX #$03                   ; parameters to 0
+.label ship_reset_bzero:
+62c6  9503    STA yaw_rate,X             ; bzzzzt
+62c8  ca      DEX                        ; x--
+62c9  10fb    BPL ship_reset_bzero       ; keep bzeroing
+62cb  8566    STA ship_angle             ; zero the low byte of the ship angle
+62cd  a623    LDX mission_difficulty     ; Read the current mission setting
+62cf  bda762  LDA mission_gravity[0],X   ; Read the mission specific gravity
+62d2  8563    STA gravity                ; and store it in a global
+62d4  bde262  LDA mission_lamps[0],X     ; Read the lamps to illuminate for this mission
+62d7  aa      TAX                        ; Move them to X
+62d8  a9f0    LDA #$f0                   ; Keep the rest of the bits on
+62da  4c5f79  JMP io_lamps_set           ; make a tail call to turn on the lamps
+```
+
+
+
 ### Ship Position and Velocity update
 
 The @mult16 function is used to compute the ship's X and Y acceleration based on the current thrust,
