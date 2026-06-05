@@ -121,6 +121,8 @@ class Annotator:
 			self.add_data("byte", words[1:])
 		elif words[0] == ".word":
 			self.add_data("word", words[1:])
+		elif words[0] == ".ptr":
+			self.add_data("ptr", words[1:])
 		elif words[0] == ".dvg":
 			self.process_dvg(words[1:])
 		elif words[0] == ".dvg_parse":
@@ -132,6 +134,11 @@ class Annotator:
 		else:
 			print(self.fake_markdown(line))
 
+	# create a link to a reference
+	def make_ref_link(self, ref, ref_addr):
+		ref_addr = "%04x" % (ref_addr)
+		return f"<a class=link href=#{ref_addr}>{ref}</a>"
+
 	# apply some markdown like functions to the line
 	def fake_markdown(self, line):
 		def lookup_ref(m):
@@ -142,8 +149,7 @@ class Annotator:
 				ref_addr = self.dis.all_names.get(ref,[None])[0]
 			if not ref_addr:
 				raise RuntimeError(f"reference '@{ref}' not found")
-			ref_addr = "%04x" % (ref_addr)
-			return f"<a class=link href=#{ref_addr}>{ref}</a>"
+			return self.make_ref_link(ref, ref_addr)
 
 		# should also build a TOC while doing this...
 		line = re.sub(r'^####\s*(.*)$', r'<h4>\1</h4>', line)
@@ -321,6 +327,8 @@ class Annotator:
 
 				if flags & Flags.SREF:
 					data_type = " func"
+				elif flags & Flags.WORD_LOW and flags & Flags.PTR:
+					data_type = " ptr"
 				elif flags & Flags.WORD_LOW:
 					data_type = " word"
 				else:
@@ -370,22 +378,36 @@ class Annotator:
 		addr_hex = "%04x" % (addr)
 
 		flags = self.dis.flags[addr]
-		data_type = "word" if flags & (Flags.WORD_LOW | Flags.WORD_HIGH) else "byte"
+
+		if flags & Flags.PTR:
+			data_type = "ptr"
+			element_size = 2
+		elif flags & Flags.WORD_LOW:
+			data_type = "word"
+			element_size = 2
+		else:
+			data_type = "byte"
+			element_size = 1
+
 		array_len = self.dis.arrays.get(addr, 1) & 0xFFFF
 
 		if flags & Flags.LOADED:
 			hexdump = []
 			for i in range(0,array_len):
+				el_addr = addr + element_size * i
 				if data_type == "word":
-					hexdump.append("%04x" % self.dis.read16(addr + 2*i))
+					hexdump.append("%04x" % self.dis.read16(el_addr))
+				elif data_type == "ptr":
+					ref_addr = self.dis.read16(el_addr)
+					hexdump.append(self.make_ref_link(self.dis.name(ref_addr), ref_addr))
 				else:
-					hexdump.append("%02x" % self.dis.read8(addr + i))
+					hexdump.append("%02x" % self.dis.read8(el_addr))
 			hexdump = ' ' + (', '.join(hexdump))
 
 		if array_len > 1:
 			array_text = "[%d]" % (array_len)
 
-		data_size = array_len * (2 if data_type == "word" else 1)
+		data_size = array_len * element_size
 		return (data_size, self.make_address_div(addr, f"""<div class=hexdump>.{data_type}{array_text}{hexdump}</div>"""))
 
 	# produce a consolidated dump (along with stats)

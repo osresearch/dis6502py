@@ -18,6 +18,7 @@ class Flags(IntFlag):
 	WORD_LOW = auto()	# Data is 16-bits wide, low byte
 	WORD_HIGH = auto()	# Data is 16-bits wide, high byte
 	ARRAY = auto()		# Data is part of an array
+	PTR = auto()		# Data is a 16-bit pointer (also a word)
 
 # sign extend an 8-bit value
 def sign8(op):
@@ -396,7 +397,13 @@ class Dis6502:
 			array_flag = Flags.ARRAY
 			self.arrays[addr] = array_size | 0x10000
 
-		if data_type == "word":
+		if data_type == "ptr":
+			is_ptr = True
+			array_flag |= Flags.PTR
+		else:
+			is_ptr = False
+
+		if data_type == "word" or is_ptr:
 			array_size *= 2
 
 		for i in range(0,array_size):
@@ -416,11 +423,17 @@ class Dis6502:
 				self.flags[el_addr] |= array_flag
 			elif data_type == "func" or data_type == "label":
 				self.flags[el_addr] |= Flags.SREF
-			elif data_type == "word":
+			elif data_type == "word" or is_ptr:
 				self.flags[el_addr] |= Flags.DREF | array_flag \
 					| (Flags.WORD_HIGH if i % 2 else Flags.WORD_LOW)
 			else:
 				raise RuntimeError(f"unknown data type '{data_type}'")
+
+			# add a data reference for each ptr word
+			if is_ptr and i % 2 == 0:
+				dest = self.read16(el_addr)
+				print("ptr ref %04x -> %04x" % (addr, dest), file=sys.stderr)
+				self.save_ref(addr, dest)
 
 		return True
 	def load_symbols(self, filename):

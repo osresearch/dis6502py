@@ -242,7 +242,7 @@
 687e draw_push_start_screen func
 689e draw_out_of_fuel_screen func
 68d6 draw_level_over_screen func
-692b string_table word 33
+692b string_table ptr 33
 696d string_table_fixup_something_else
 6979 str_LOW_ON_FUEL
 6984 str_OUT_OF_FUEL

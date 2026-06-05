@@ -205,7 +205,7 @@ has the high bit set as a terminator.
 There are 33 strings in the game and they are all indexed by number. For English the table has the pointers:
 
 ```
-.word 692b string_table 33 ; Pointers to the English strings
+.ptr 692b string_table 33 ; Pointers to the English strings
 .byte 69ab str_PUSH_START 10 ; "PUSH START"
 ```
 
