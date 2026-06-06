@@ -12,6 +12,7 @@ llander.sym: FORCE
 		zeropage.md \
 		coins.md \
 		tick.md \
+		selftest.md \
 		footer.md \
 		> index.html
 

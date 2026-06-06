@@ -15,6 +15,7 @@
 0023 mission_difficulty
 0024 mission_debounce
 0025 start_game_debounce
+0026 diag_step_debounce
 0027 VecCmdQueue word
 0029 vecdata_ptr_start
 002b draw_string_ptr word
@@ -480,8 +481,8 @@
 7b63 DrawNumStringLoop
 7b75 DoLowerDigit
 7b84 RESET func
-7b8e bzero_ram
-7b9d reset_in0_bit2_set
+7b8e bzero_zeropage
+7b9d normal_startup
 7bb9 DoSelfTest
 7e59 VecCmdQueue_reset func
 7e62 FUN_7e62 func
@@ -492,6 +493,8 @@
 7e84 spin_3khz_hi
 7e89 spin_3khz_lo
 7e95 io_in0_diagstep func
+7e9c diagstep_done
+7e9d diagstep_pressed
 7ea4 VecCmd_copy_8 func
 7ea6 VecCmd_memcpy func
 7eaa VecCmd_memcpy_vecptr func
