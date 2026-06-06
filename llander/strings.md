@@ -122,13 +122,16 @@ some sort of fixup that I haven't figured out yet:
 ```
 
 
-As with many of the functions, there are wrappers than fall through into the @WriteText function:
+Since the strings need to be positioned, there are functions that do that too.  There is a table of
+`LABS` DVG commands for where each localized string needs to go on screen, and the @WriteText_xy function
+that will copy the positioning commands to the queue, along with a command to set the scale correctly for
+drawing text, and then fall-through into the @WriteText function to actually draw the string on screen.
 
 ```
-; Call @WriteText with string id 0x80 (which does not exist)
-; `X`: ID?
-; Falls through
-.func WriteText_newline:
+; Position the beam, but do not display the text.
+; `X`: String ID
+; `A` is set to 0x80, which will cause @WriteText_xy to exit after doing the scale setting
+.func WriteText_no_draw:
 7a32  a980    LDA #$80                   ; tail call to @WriteText_xy(X, 0x80)
 
 ; Write strings in the correct location.
@@ -148,18 +151,31 @@ As with many of the functions, there are wrappers than fall through into the @Wr
 7a3a  a955    LDA #$55                   ; .
 7a3c  6900    ADC #$00                   ; .
 7a3e  a627    LDX VecCmdQueue            ; VecCmdQueue_copy2 = (u160 VecCmdQueue
-7a40  862f    STX VecCmdQueue_copy2      ; .
+7a40  862f    STX VecCmdQueue_copy2      ; . why make this copy?
 7a42  a628    LDX VecCmdQueue_high       ; .
 7a44  8630    STX VecCmdQueue_copy2_high ; .
-7a46  20cd7e  JSR vecram_copy_long       ;
-7a49  20107f  JSR vecgen_init_screen     ;
-7a4c  68      PLA                        ;
-7a4d  3058    BMI rts_7aa7               ;
+7a46  20cd7e  JSR vecram_copy_long       ; Copy the 8 bytes from `A:Y` to the vector generator
+7a49  20107f  JSR WriteText_set_size_7   ; Reset the scale for drawing the text
+7a4c  68      PLA                        ; Restore `A` from the stack
+7a4d  3058    BMI rts_7aa7               ; If bit 7 in `A` was not set, fall through into @WriteText
 ```
 
 ```
 .dvg_parse 550c string_xy_locations 24 ; DVG `LABS` commands to position strings in the correct location
 ```
+
+```
+; Reset the vector generator to a scale of 7 for drawing the text
+.func WriteText_set_size_7:
+7f10  a955    LDA #$55                   ; `A:Y` = @vecgen_set_scale_7
+7f12  a0ae    LDY #$ae                   ; .
+7f14  4ccd7e  JMP vecram_copy_long       ; tail call to @vecram_copy_long
+```
+
+```
+.dvg_parse 55ae vecgen_set_scale_7 2 ; Command to set the DVG to scale 7 for drawing text
+```
+
 
 ### English strings
 

@@ -75,7 +75,7 @@ to copy commands to the queue.
 ; Updates @VecCmdQueue to point to the end of the command queue
 .func VecCmd_memcpy:
 7ea6  8565    STA VecPtr_high            ; VecPtr = `A:Y` to start with
-7ea8  8464    STY VecPtr                 ; fall through into @vecram_memcpy_vecptr
+7ea8  8464    STY VecPtr                 ; fall through into @VecCmd_memcpy_vecptr
 
 ; Copy commands from the 6502's memory to the DVG's command queue
 ; `X`: Length to copy (in bytes)
@@ -112,7 +112,7 @@ There are lots of helpers to copy short or long vector commands, as well as to s
 ```
 ; Copy 8 bytes from `A:Y` to the DVG
 .func vecram_memcpy_8:
-7ea4  a208    LDX #$08                   ; fall through to @vecram_memcpy
+7ea4  a208    LDX #$08                   ; fall through to @VecCmd_memcpy
 
 ; Copy 2 bytes from `A:Y` to the DVG
 .func vecram_copy_short:
@@ -130,19 +130,6 @@ There are lots of helpers to copy short or long vector commands, as well as to s
 7ed3  d0d5    BNE VecCmd_memcpy_vecptr   ; always tail call to vecram_memcpy_vecptr
 ```
 
-
-
-```
-; Reset the vector generator to a scale of 7 with the beam at 0,0
-.func vecgen_init_screen:
-7f10  a955    LDA #$55                   ; `A:Y` = @vecgen_init_screen_cmd
-7f12  a0ae    LDY #$ae                   ; .
-7f14  4ccd7e  JMP vecram_copy_long       ; tail call to @vecram_copy_long
-```
-
-```
-.dvg_parse 55ae vecgen_init_screen_cmd 2 ; Command to reset the screen
-```
 
 
 
