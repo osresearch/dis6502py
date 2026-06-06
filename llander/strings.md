@@ -154,7 +154,7 @@ drawing text, and then fall-through into the @WriteText function to actually dra
 7a40  862f    STX VecCmdQueue_copy2      ; . why make this copy?
 7a42  a628    LDX VecCmdQueue_high       ; .
 7a44  8630    STX VecCmdQueue_copy2_high ; .
-7a46  20cd7e  JSR vecram_copy_long       ; Copy the 8 bytes from `A:Y` to the vector generator
+7a46  20cd7e  JSR VecCmd_copy_4          ; Copy the 8 bytes from `A:Y` to the vector generator
 7a49  20107f  JSR WriteText_set_size_7   ; Reset the scale for drawing the text
 7a4c  68      PLA                        ; Restore `A` from the stack
 7a4d  3058    BMI rts_7aa7               ; If bit 7 in `A` was not set, fall through into @WriteText
@@ -169,7 +169,7 @@ drawing text, and then fall-through into the @WriteText function to actually dra
 .func WriteText_set_size_7:
 7f10  a955    LDA #$55                   ; `A:Y` = @vecgen_set_scale_7
 7f12  a0ae    LDY #$ae                   ; .
-7f14  4ccd7e  JMP vecram_copy_long       ; tail call to @vecram_copy_long
+7f14  4ccd7e  JMP VecCmd_copy_4          ; tail call to @VecCmd_copy_4
 ```
 
 ```

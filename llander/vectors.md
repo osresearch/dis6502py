@@ -64,7 +64,41 @@ the DVG's memory.  This is mapped at `0x4000` for the 6502, `0x0000` for the DVG
 7e5d  a900    LDA #$00                   ; .
 7e5f  8527    STA VecCmdQueue            ; .
 7e61  60      RTS                        ; Our work is done
+
+
+; Start the vector generator!
+; Everything that has been copied to @VecCmdQueue should be executed by the DVG and drawn
+; to the screen.
+;
+; `A`: value to write to the `DMAGO` command as well as the watchdog value to write
+.func vecgen_go:
+7e7a  8d0030  STA IO_DMAGO               ; Write to the `DMAGO` memory mapped pin that enables the vector generator
+7e7d  a003    LDY #$03                   ; Fall through to busy wait for 3 * 5 ms = 15 ms
+
+; Busy wait on the external 3 KHz clock connected to bit 6 on @IO_in0
+; This will wait 15 of the 3 KHz cycles per `Y`, or about 5 ms each
+; It will write to the watchdog after each 5 ms clock cycle to avoid resets while busy waiting,
+; but if the 3 KHz clock fails then the watchdog will *not* be petted and the system should
+; reset.
+;
+; `A`: Watchdog value
+; `Y`: Number of 5 ms cycles to spin
+.func busywait_5ms:
+7e7f  8d0034  STA IO_watchdog            ; Pet the watchdog
+7e82  a214    LDX #$14                   ; for x = 14 ... 0:
+.label spin_3khz_hi:
+7e84  2c0020  BIT IO_in0                 ; Wait for clock to go low by read from `in0`
+7e87  70fb    BVS spin_3khz_hi           ; If bit 6 is set, keep spinning
+.label spin_3khz_lo:
+7e89  2c0020  BIT IO_in0                 ; Wait for clock to go high by re-read from `in0`
+7e8c  50fb    BVC spin_3khz_lo           ; If bit 6 is unset, keep spinning
+7e8e  ca      DEX                        ; if X-- != 0
+7e8f  d0f3    BNE spin_3khz_hi           ; do another 3 KHz clock cycle (15 per iteration)
+7e91  88      DEY                        ; if Y-- != 0
+7e92  d0eb    BNE busywait_5ms           ; pet the watchdog and keep waiting
+7e94  60      RTS                        ; We've waited `Y` * 14 of the 3 KHz clock cycles, we're done
 ```
+
 
 Since much of the game's assets live in 6502 ROM space, not the DVG ROM, there is a memcpy routine
 to copy commands to the queue.
@@ -111,21 +145,21 @@ There are lots of helpers to copy short or long vector commands, as well as to s
 
 ```
 ; Copy 8 bytes from `A:Y` to the DVG
-.func vecram_memcpy_8:
+.func VecCmd_copy_8:
 7ea4  a208    LDX #$08                   ; fall through to @VecCmd_memcpy
 
 ; Copy 2 bytes from `A:Y` to the DVG
-.func vecram_copy_short:
+.func VecCmd_copy_2:
 7ec9  a202    LDX #$02                   ; X = 2
-7ecb  d0d9    BNE VecCmd_memcpy          ; always tail call to vecram_memcpy
+7ecb  d0d9    BNE VecCmd_memcpy          ; always tail call to @VecCmd_memcpy
 
 ; Copy 4 bytes from `A:Y` to the DVG
-.func vecram_copy_long:
+.func VecCmd_copy_4:
 7ecd  a204    LDX #$04                   ; X = 4
-7ecf  d0d5    BNE VecCmd_memcpy          ; always tail call to vecram_memcpy
+7ecf  d0d5    BNE VecCmd_memcpy          ; always tail call to @VecCmd_memcpy
 
 ; Copy 4 bytes from @VecPtr to the DVG
-.func vecram_memcpy_4:
+.func VecCmd_copy_4_vecptr:
 7ed1  a204    LDX #$04                   ; X = 4
 7ed3  d0d5    BNE VecCmd_memcpy_vecptr   ; always tail call to vecram_memcpy_vecptr
 ```

@@ -487,18 +487,20 @@
 7e62 FUN_7e62 func
 7e64 font_lookup_table_memcpy func
 7e71 activate_spot_killer_maybe func
-7e7a vecgen_go_wait func
-7e7f vecgen_wait func
+7e7a vecgen_go func
+7e7f busywait_5ms func
+7e84 spin_3khz_hi
+7e89 spin_3khz_lo
 7e95 io_in0_diagstep func
-7ea4 vecram_memcpy_8 func
+7ea4 VecCmd_copy_8 func
 7ea6 VecCmd_memcpy func
 7eaa VecCmd_memcpy_vecptr func
 7ead vecram_memcpy_loop
 7ebe vecram_skip_inc
 7ec8 vecram_skip_inc2
-7ec9 vecram_copy_short func
-7ecd vecram_copy_long func
-7ed1 vecram_memcpy_4 func
+7ec9 VecCmd_copy_2 func
+7ecd VecCmd_copy_4 func
+7ed1 VecCmd_copy_4_vecptr func
 7ed5 vec_add_to_offset func
 7edc vec_something_7edc
 7ee4 vec_copy_and_invert_maybe func
