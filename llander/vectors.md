@@ -36,10 +36,115 @@ from `0x4800` - `0x4FFF` and `0x5000` - `0x5FFF` (in the 6502's address space).
 Once the 6502 has written a "frame" to the vector generator's RAM, it drives @IO_DMAGO which tells
 the vector generator to start executing from the RAM until it hits a `HLT` opcode.
 
+### Vector Commands
+
 ```
 .byte 3000 IO_DMAGO ; Active low output for starting the Digital Vector Generator
-.word 27 VecRamPtr ; Address of the end of the current commands for the DVG (starts at `0x4000`)
+
+; Pointer to the current end of the commands for the vector generator
+; Resets to the start of DVG RAM `0x4000` for each new "frame"
+; should always be less than `0x4800` since that is all of the RAM for the DVG.
+
+.word 27 VecCmdQueue ; Address of the end of the current commands for the DVG (starts at `0x4000`)
+.word 2d VecCmdQueue_copy ; Another cpoy
+.word 2f VecCmdQueue_copy2 ; And a third copy
+
+; Pointer to 6502 memory that should be copied to the @VecCmdQueue
+.word 64 VecPtr ; End of the  commands
 ```
+
+At the start of each new frame, the vector command queue pointer will be set to point at the start of
+the DVG's memory.  This is mapped at `0x4000` for the 6502, `0x0000` for the DVG.
+
+```
+; Reset the VecCmdQueue to the start of DVG vector memory at the beginning of each "frame"
+.func VecCmdQueue_reset:
+7e59  a940    LDA #$40                   ; VecCmdQueue = (u16*) 0x4000
+7e5b  8528    STA VecCmdQueue_high       ; .
+7e5d  a900    LDA #$00                   ; .
+7e5f  8527    STA VecCmdQueue            ; .
+7e61  60      RTS                        ; Our work is done
+```
+
+Since much of the game's assets live in 6502 ROM space, not the DVG ROM, there is a memcpy routine
+to copy commands to the queue.
+
+```
+; Copy `X` bytes from 6502 memory `A:Y` to the DVG's command queue
+; Updates @VecPtr with the ending address of the copy
+; Updates @VecCmdQueue to point to the end of the command queue
+.func VecCmd_memcpy:
+7ea6  8565    STA VecPtr_high            ; VecPtr = `A:Y` to start with
+7ea8  8464    STY VecPtr                 ; fall through into @vecram_memcpy_vecptr
+
+; Copy commands from the 6502's memory to the DVG's command queue
+; `X`: Length to copy (in bytes)
+; Global @VecPtr Pointer to 6502 memory, will be modified to point to the end of the data copied
+; Global @VecCmdQueue Tail of the DVG command queue, will be updated to point to the new end of the queue
+.func VecCmd_memcpy_vecptr:
+7eaa  8a      TXA                        ;
+7eab  a8      TAY                        ;
+7eac  88      DEY                        ; for y = len-1 .. 0:
+.label vecram_memcpy_loop:
+7ead  b164    LDA (VecPtr),Y             ; VecCmdQueue[Y] = VecPtr[Y]
+7eaf  9127    STA (VecCmdQueue),Y        ; .
+7eb1  88      DEY                        ; Y--
+7eb2  10f9    BPL vecram_memcpy_loop     ; if Y >= 0, then keep copying
+7eb4  8a      TXA                        ; restore original len
+7eb5  18      CLC                        ; prepare for addition
+7eb6  6527    ADC VecCmdQueue            ; (u16) VecCmdQueue += (u8) len
+7eb8  8527    STA VecCmdQueue            ; .
+7eba  9002    BCC vecram_skip_inc        ; .
+7ebc  e628    INC VecCmdQueue_high       ; .
+.label vecram_skip_inc:
+7ebe  8a      TXA                        ; restore original len
+7ebf  18      CLC                        ; prepare for addition
+7ec0  6564    ADC VecPtr                 ; (u16) VecPtr += (u8) len
+7ec2  8564    STA VecPtr                 ; .
+7ec4  9002    BCC vecram_skip_inc2       ; .
+7ec6  e665    INC VecPtr_high            ; .
+.label vecram_skip_inc2:
+7ec8  60      RTS                        ; Return to the caller
+```
+
+There are lots of helpers to copy short or long vector commands, as well as to set the @VecPtr pointer.
+
+```
+; Copy 8 bytes from `A:Y` to the DVG
+.func vecram_memcpy_8:
+7ea4  a208    LDX #$08                   ; fall through to @vecram_memcpy
+
+; Copy 2 bytes from `A:Y` to the DVG
+.func vecram_copy_short:
+7ec9  a202    LDX #$02                   ; X = 2
+7ecb  d0d9    BNE VecCmd_memcpy          ; always tail call to vecram_memcpy
+
+; Copy 4 bytes from `A:Y` to the DVG
+.func vecram_copy_long:
+7ecd  a204    LDX #$04                   ; X = 4
+7ecf  d0d5    BNE VecCmd_memcpy          ; always tail call to vecram_memcpy
+
+; Copy 4 bytes from @VecPtr to the DVG
+.func vecram_memcpy_4:
+7ed1  a204    LDX #$04                   ; X = 4
+7ed3  d0d5    BNE VecCmd_memcpy_vecptr   ; always tail call to vecram_memcpy_vecptr
+```
+
+
+
+```
+; Reset the vector generator to a scale of 7 with the beam at 0,0
+.func vecgen_init_screen:
+7f10  a955    LDA #$55                   ; `A:Y` = @vecgen_init_screen_cmd
+7f12  a0ae    LDY #$ae                   ; .
+7f14  4ccd7e  JMP vecram_copy_long       ; tail call to @vecram_copy_long
+```
+
+```
+.dvg_parse 55ae vecgen_init_screen_cmd 2 ; Command to reset the screen
+```
+
+
 
 ### Fonts and number drawing
 
@@ -105,10 +210,10 @@ the vector generator to start executing from the RAM until it hits a `HLT` opcod
 7825  a000    LDY #$00                   ; `Y` is the offset for the vector ram pointer
 7827  aa      TAX                        ; `X = A`
 7828  bda257  LDA CharPtrTbl[0],X        ; Read the low-byte of the font command
-782b  9127    STA (VecRamPtr),Y          ; Store it in the vector pointer at the current location
+782b  9127    STA (VecCmdQueue),Y        ; Store it in the vector pointer at the current location
 782d  bda357  LDA CharPtrTbl_high[0],X   ; Read the high-byte of the font command
 7830  c8      INY                        ; Increment `Y`
-7831  9127    STA (VecRamPtr),Y          ; Store the high byte at the next location
+7831  9127    STA (VecCmdQueue),Y        ; Store the high byte at the next location
 7833  203878  JSR VecPtrUpdate           ; Add `Y` to the vector ram pointer
 7836  28      PLP                        ; Restore the carry flag
 7837  60      RTS                        ; Return to the caller
@@ -118,10 +223,10 @@ the vector generator to start executing from the RAM until it hits a `HLT` opcod
 .func VecPtrUpdate:
 7838  98      TYA                        ; Move the number of bytes to `A`
 7839  38      SEC                        ; Set the carry, which will add the one extra
-783a  6527    ADC VecRamPtr              ; Add `Y+1` to the pointer
-783c  8527    STA VecRamPtr              ; Store it back in the pointer
+783a  6527    ADC VecCmdQueue            ; Add `Y+1` to the pointer
+783c  8527    STA VecCmdQueue            ; Store it back in the pointer
 783e  9002    BCC VecPtr_no_overflow     ; If no overflow skip the increment
-7840  e628    INC VecRamPtr_high         ; Overflowed, so increment the high byte
+7840  e628    INC VecCmdQueue_high       ; Overflowed, so increment the high byte
 .label VecPtr_no_overflow:
 7842  60      RTS                        ; Return to the caller
 ```
@@ -147,11 +252,15 @@ that it consists of a few short vectors (command `F`) and then a `RTSL` (command
 .dvg_parse 55be font_a 8 ; Character "`A`"
 ```
 
+
+### Vectors
+
+
 ### Ships
 
 ```
 .word 53ee twenty_subroutines 20 ; Twenty subroutine calls, maybe ships or stars?
-.dvg 53ee 20 1024 1024 1
+Not now: .dvg 53ee 20 1024 1024 1
 ```
 
 ### Displays

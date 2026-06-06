@@ -15,11 +15,11 @@
 0023 mission_difficulty
 0024 mission_debounce
 0025 start_game_debounce
-0027 VecRamPtr word
+0027 VecCmdQueue word
 0029 vecdata_ptr_start
 002b draw_string_ptr word
-002d VecRamPtr_copy
-002f VecRamPtr_copy2
+002d VecCmdQueue_copy word
+002f VecCmdQueue_copy2 word
 0031 vec_letter_ptr_something
 0033 nmi_counter_4
 0034 nmi_counter_next
@@ -54,7 +54,7 @@
 005e ship_vel word 2
 0062 touchdown_velocities_maybe
 0063 gravity
-0064 VecPtr
+0064 VecPtr word
 0066 ship_angle word
 0067 ship_angle_high word
 0068 abort_debounce
@@ -132,10 +132,11 @@
 51e2 vectors_not_zoomed_51e2
 52fe vec_subroutines_zoomed_52fe
 53ee twenty_subroutines word 20
+550c string_xy_locations word 24
 5576 setup_display_2 word 8
 5586 setup_display_3 word 9
 5598 setup_display_4 word 9
-55ae font_start
+55ae vecgen_init_screen_cmd word 2
 55b2 setup_font word 6
 55be font_a word 8
 5668 font_l
@@ -446,7 +447,7 @@
 7a28 draw_string_return
 7a29 draw_lost_fuel_units_message func
 7a32 WriteText_newline func
-7a34 WriteText_wrapper func
+7a34 WriteText_xy func
 7a4f WriteText func
 7a56 write_localized_string
 7a6b write_language_zero
@@ -482,23 +483,26 @@
 7b8e bzero_ram
 7b9d reset_in0_bit2_set
 7bb9 DoSelfTest
-7e59 VecRamPtr_reset_0x4000 func
+7e59 VecCmdQueue_reset func
 7e62 FUN_7e62 func
 7e64 font_lookup_table_memcpy func
 7e71 activate_spot_killer_maybe func
 7e7a vecgen_go_wait func
 7e7f vecgen_wait func
 7e95 io_in0_diagstep func
-7ea4 vecram_memcpy_8_update_vecptr func
-7ea6 vecram_memcpy_update_vecptr func
-7eaa vecram_memcpy_vecptr func
+7ea4 vecram_memcpy_8 func
+7ea6 VecCmd_memcpy func
+7eaa VecCmd_memcpy_vecptr func
+7ead vecram_memcpy_loop
+7ebe vecram_skip_inc
+7ec8 vecram_skip_inc2
 7ec9 vecram_copy_short func
 7ecd vecram_copy_long func
 7ed1 vecram_memcpy_4 func
 7ed5 vec_add_to_offset func
 7edc vec_something_7edc
 7ee4 vec_copy_and_invert_maybe func
-7f10 vecgen_beam_off_maybe func
+7f10 vecgen_init_screen func
 7f17 DrawNumber_decimal_1 func
 7f2d font_fixup_0 func
 7f34 font_fixup_something

@@ -12,43 +12,43 @@ has the high bit set as a terminator.
 ```
 ; DrawString
 ; `X:Y` Pointer to the string to write, terminated with 0x80 on the last character
-; Copies the font subroutines to @VecRamPtr
+; Copies the font subroutines to @VecCmdQueue
 ; Sets @draw_string_ptr to point to the end of the string
 .func DrawString:
-79f2  862c    STX draw_string_ptr_high   ; Store the pointer high
-79f4  842b    STY draw_string_ptr        ; and low bytes
+79f2  862c    STX draw_string_ptr_high   ; (u16*) draw_string_ptr = `X:Y`
+79f4  842b    STY draw_string_ptr        ; .
 79f6  a900    LDA #$00                   ; for i = 0 ... strlen * 2
 .label copy_next_vec_instruction:
 79f8  4a      LSR                        ; halve i since we're copying 16-bit `JSRL` vector subroutine
 79f9  a8      TAY                        ; calls for each letter and it is going up by two each byte
-79fa  b12b    LDA (draw_string_ptr),Y    ; Read low byte from the string
+79fa  b12b    LDA (draw_string_ptr),Y    ; char = (u8*) draw_string_ptr[Y/2]
 79fc  8539    STA GenByte_0039           ; Cache it in gen byte
-79fe  297f    AND #$7f                   ; Strings are terminated by setting the high bit
-7a00  aa      TAX                        ; so strip the high bit from the letter
-7a01  98      TYA                        ; move y back into a
-7a02  0a      ASL                        ; and double it back to by index by words
-7a03  a8      TAY                        ; and back into y (what a dance)
-7a04  bda257  LDA CharPtrTbl[0],X        ; Index into the font table to get the low byte
-7a07  9127    STA (VecRamPtr),Y          ; and store it in the vector ram ptr
-7a09  c8      INY                        ; next byte...
-7a0a  bda357  LDA CharPtrTbl_high[0],X   ; store the high byte of the font into the vector ram ptr
-7a0d  9127    STA (VecRamPtr),Y          ; indexed by y
-7a0f  c8      INY                        ; and increment y again since we moved two bytes
-7a10  98      TYA                        ; and back into a
+79fe  297f    AND #$7f                   ; strip out the terminating high bit if present:
+7a00  aa      TAX                        ; X = char & 0x7F
+7a01  98      TYA                        ; Y = 2*Y
+7a02  0a      ASL                        ; (double it back to by index by words)
+7a03  a8      TAY                        ; .
+7a04  bda257  LDA CharPtrTbl[0],X        ; *(u16*) VecCmdQueue[Y] = (u16) CharPtrTbl[char]
+7a07  9127    STA (VecCmdQueue),Y        ; (note that the char is stored in ROM already doubled for indexing by words)
+7a09  c8      INY                        ; .
+7a0a  bda357  LDA CharPtrTbl_high[0],X   ; .
+7a0d  9127    STA (VecCmdQueue),Y        ; .
+7a0f  c8      INY                        ; Y += 2 (including previous INY)
+7a10  98      TYA                        ; and move total bytes copied back into `A`
 7a11  2439    BIT GenByte_0039           ; Test the cached version of the letter
 7a13  10e3    BPL copy_next_vec_instruction ; If positive, keep copying
-7a15  18      CLC                        ; Clear carry
-7a16  6527    ADC VecRamPtr              ; Add number of bytes written to vector ram
-7a18  8527    STA VecRamPtr              ; to the @VecRamPtr
-7a1a  9002    BCC increment_char_ptr     ; Did the low byte overflow?
-7a1c  e628    INC VecRamPtr_high         ; if so increment the high byte as well
+7a15  18      CLC                        ; Clear carry for addition
+7a16  6527    ADC VecCmdQueue            ; (u16*) VecCmdQueue += (u8) 2*strlen (in `A`)
+7a18  8527    STA VecCmdQueue            ; .
+7a1a  9002    BCC increment_char_ptr     ; .
+7a1c  e628    INC VecCmdQueue_high       ; .
 .label increment_char_ptr:
 7a1e  98      TYA                        ; Copy number of bytes copied to vector ram back to A
 7a1f  4a      LSR                        ; Divide it by two to get the number of characters in the string
-7a20  652b    ADC draw_string_ptr        ; Increase the character pointer
+7a20  652b    ADC draw_string_ptr        ; (u16) draw_string_ptr += (u8) 2*strlen
 7a22  852b    STA draw_string_ptr        ; so it points to the end of the string
-7a24  9002    BCC draw_string_return     ; did the low byte overflow?
-7a26  e62c    INC draw_string_ptr_high   ; if so increment the high byte as well
+7a24  9002    BCC draw_string_return     ; .
+7a26  e62c    INC draw_string_ptr_high   ; .
 .label draw_string_return:
 7a28  60      RTS                        ; return to the caller
 ```
@@ -88,12 +88,12 @@ some sort of fixup that I haven't figured out yet:
 .label L7a77:
 7a77  18      CLC                        ;
 7a78  a002    LDY #$02                   ;
-7a7a  712f    ADC (VecRamPtr_copy2),Y    ; Maybe special characters? I'm really not sure yet.
-7a7c  912f    STA (VecRamPtr_copy2),Y    ;
+7a7a  712f    ADC (VecCmdQueue_copy2),Y  ; Maybe special characters? I'm really not sure yet.
+7a7c  912f    STA (VecCmdQueue_copy2),Y  ;
 7a7e  8a      TXA                        ;
 7a7f  c8      INY                        ;
-7a80  712f    ADC (VecRamPtr_copy2),Y    ;
-7a82  912f    STA (VecRamPtr_copy2),Y    ;
+7a80  712f    ADC (VecCmdQueue_copy2),Y  ;
+7a82  912f    STA (VecCmdQueue_copy2),Y  ;
 .label L7a84:
 7a84  68      PLA                        ; Restore original string id from the stack
 7a85  0a      ASL                        ; Double it to get a word offset
@@ -109,7 +109,7 @@ some sort of fixup that I haven't figured out yet:
 7a97  bd0558  LDA string_table_localized_high[0],X ; and high bytes fo the pointer
 .label call_draw_string:
 7a9a  aa      TAX                        ; Convert the string pointer from `A:Y` into `X:Y`
-7a9b  4cf279  JMP DrawString             ; and tall call @DrawString
+7a9b  4cf279  JMP DrawString             ; and tail call @DrawString
 .label write_unlocalized_string:
 7a9e  aa      TAX                        ; Index into the english string table
 7a9f  bc2b69  LDY string_table[0],X      ; and read the low
@@ -121,6 +121,45 @@ some sort of fixup that I haven't figured out yet:
 7aa7  60      RTS                        ; Return to caller
 ```
 
+
+As with many of the functions, there are wrappers than fall through into the @WriteText function:
+
+```
+; Call @WriteText with string id 0x80 (which does not exist)
+; `X`: ID?
+; Falls through
+.func WriteText_newline:
+7a32  a980    LDA #$80                   ; tail call to @WriteText_xy(X, 0x80)
+
+; Write strings in the correct location.
+;
+; This uses the location table at string_xy_locations and generates the vector
+; commands to position and scale those strings, then calls @WriteText to draw the strings.
+;
+; `X`: string id
+; `A`: Flags?
+;
+.func WriteText_xy:
+7a34  48      PHA                        ; cache the flags on the stack
+7a35  8a      TXA                        ;
+7a36  18      CLC                        ;
+7a37  690c    ADC #$0c                   ; `A:Y` = &string_xy_locations[X]
+7a39  a8      TAY                        ; .
+7a3a  a955    LDA #$55                   ; .
+7a3c  6900    ADC #$00                   ; .
+7a3e  a627    LDX VecCmdQueue            ; VecCmdQueue_copy2 = (u160 VecCmdQueue
+7a40  862f    STX VecCmdQueue_copy2      ; .
+7a42  a628    LDX VecCmdQueue_high       ; .
+7a44  8630    STX VecCmdQueue_copy2_high ; .
+7a46  20cd7e  JSR vecram_copy_long       ;
+7a49  20107f  JSR vecgen_init_screen     ;
+7a4c  68      PLA                        ;
+7a4d  3058    BMI rts_7aa7               ;
+```
+
+```
+.dvg_parse 550c string_xy_locations 24 ; DVG `LABS` commands to position strings in the correct location
+```
 
 ### English strings
 
