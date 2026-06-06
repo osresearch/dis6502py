@@ -30,6 +30,10 @@ The main commands that are used in Lunar Lander are:
 * `JMPL` (`0xE`) Jump to an address
 * `SVEC` (`0xF`) Draw a short vector from the current location to a new relative XY position
 
+```
+.word 4000 VGRAM ; Digital Vector Generator RAM mapped into the 6502
+```
+
 The vector generator shares memory with the 6502.  It has RAM from `0x4000` - `0x47FF` and two ROM's
 from `0x4800` - `0x4FFF` and `0x5000` - `0x5FFF` (in the 6502's address space).
 

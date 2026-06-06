@@ -78,7 +78,7 @@ This is handled here:
 
 ```
 ; While the main engine is thrusting, fuel is drained based on the lever position
-.func fuel_drain_thrust:
+.func BURN:
 6b71  a9da    lda #$da                   ; Default is to lose 218 fuel per thrust unit
 6b73  a40b    ldy THRSTLV                ; If thrust mode is negative
 6b75  3008    bmi fuel_thrust_multiply   ; then use the default
@@ -155,7 +155,10 @@ This is handled here:
 ### Thrust
 
 ```
-.func thrust_smoothing_maybe:
+;
+; Thrust level calculations
+;
+.func THRLVL:
 6414  2422    bit GAMODE                 ;
 6416  5004    bvc L641c                  ;
 6418  a556    lda INDEX                  ;

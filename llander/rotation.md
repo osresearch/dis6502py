@@ -39,7 +39,7 @@ int IO_read_rotate_buttons(void)
 
 We now know something about the way the game tracks orientation and that it uses a reference frame where positive
 rotation is to the left.
-Based on the cross references, we can see that this function is called by the @ship_command_yaw and @ship_command_yaw_easy
+Based on the cross references, we can see that this function is called by the ship_command_yaw and ship_command_yaw_easy
 functions.  Let's look at that first one since it's "easier":
 
 
@@ -52,7 +52,7 @@ functions.  Let's look at that first one since it's "easier":
 ; In the easiest mode the ship is limited to mostly upright angles.
 ;
 ; Yawing does cost a small amount of fuel and there is a tail call
-; to @yaw_drain_fuel.
+; to yaw_drain_fuel.
 ;
 .func ship_command_yaw_easy
 63d4  2497    bit CRDTFLG                ; Read the fuel variable
@@ -79,11 +79,11 @@ functions.  Let's look at that first one since it's "easier":
 63f8  0a      asl                        ;
 63f9  0a      asl                        ;
 63fa  8567    sta ROT_high               ; And store the correct high byte for the ship's angle
-63fc  90d5    bcc rts_63d3               ; if no rotation happened do not drain any fuel, otherwise fall through into @yaw_drain_fuel
+63fc  90d5    bcc rts_63d3               ; if no rotation happened do not drain any fuel, otherwise fall through into yaw_drain_fuel
 
 ; Wrapper that drains a small amount of fuel when yawing.
 ; All difficulties use this.
-; There is a tail call to @fuel_drain
+; There is a tail call to fuel_drain
 .func yaw_drain_fuel
 63fe  a200    ldx #$00                   ; Pass a 16-bit BCD value 0x0600 to
 6400  a006    ldy #$06                   ; the fuel drain wrapper
@@ -108,26 +108,27 @@ like ghidra and sometimes requires manual annotation to decompile.
 
 ### Yaw (Hard)
 
-```
-; Missions are selected with the "Game Select" button and range from 0 - 3:
-;
-; 0 "Training" Light gravity     Friction     Controlled Rotation
-; 1 "Cadet"    Moderate gravity  No Friction  Controlled Rotation
-; 2 "Prime"    Strong gravity    No Friction  Controlled Rotation
-; 3 "Command"  Moderate gravity  No Friction  Rotational Momentum
-;
-.byte 23 mission_difficulty ; Mission difficulty 0 - 3
-```
+Missions are selected with the "Game Select" button and range from 0 - 3:
+
+<pre>
+0 "Training" Light gravity     Friction     Controlled Rotation
+1 "Cadet"    Moderate gravity  No Friction  Controlled Rotation
+2 "Prime"    Strong gravity    No Friction  Controlled Rotation
+3 "Command"  Moderate gravity  No Friction  Rotational Momentum
+</pre>
+
 
 ```
-; @ship_command_yaw handles the hard yaw mode in difficulty 3 "Command"
+; Rotate the ship
+;
+; this handles the hard yaw mode in difficulty 3 "Command"
 ; where the player controls the yaw thrusters, rather than the angle.
 ; this allows the ship to rotate all the way around and they have to stop
 ; rotation by firing the opposite thruster.  it's really hard!
 ;
-; if the game is in a lower difficulty mission, then @ship_command_yaw_easy will
+; if the game is in a lower difficulty mission, then ship_command_yaw_easy will
 ; be called instead.
-.func ship_command_yaw:
+.func ROTSHIP:
 633c  a556    lda INDEX                  ; Only process commands if ship_abort is not set
 633e  f001    beq not_aborting           ;
 6340  60      rts                        ; Abort in process, nothing to do here
@@ -135,7 +136,7 @@ like ghidra and sometimes requires manual annotation to decompile.
 6341  a523    lda PLYMOD                 ; Use the easy mode for yaw commands other than
 6343  c903    cmp #$03                   ; if mission_difficulty == 3 ("Command")
 6345  f003    beq yaw_momentum           ; then we will use yaw momentum that is much harder
-6347  4cd463  jmp ship_command_yaw_easy  ; else Tail position call to @ship_command_yaw_easy
+6347  4cd463  jmp ship_command_yaw_easy  ; else Tail position call to ship_command_yaw_easy
 .label yaw_momentum:
 634a  a566    lda ROT                    ; ship_angle += yaw_rate
 634c  18      clc                        ; these are normal signed
@@ -143,7 +144,7 @@ like ghidra and sometimes requires manual annotation to decompile.
 634f  8566    sta ROT                    ; code is much simpler than
 6351  a567    lda ROT_high               ; the signed magnitude stuff
 6353  6504    adc SHPINE_high            ; that comes later
-6355  8567    sta ROT_high               ; for the @ship_update
+6355  8567    sta ROT_high               ; for the ship_update
 6357  4a      lsr                        ; Divide the high-byte of the angle
 6358  4a      lsr                        ; by four
 6359  291f    and #$1f                   ; And mask it down to 0-31
@@ -292,11 +293,14 @@ rotate the force into the screen coordinate frame.
 ```
 
 ```
+; Compute thrust X,Y vectors.
+;
 ; Update the ship's acceleration in the screen reference frame
 ; Compute sin and cos of the ship's angle and multiplies the
 ; current thrust setting to get the X and Y acceleration.
 ; Also computes the sign bit for these accelerations
-.func ship_compute_accel_xy:
+;
+.func FRCMLT:
 6b32  a502    lda SHIP                   ; Read the reduced ship's angle (updated by @ship_command_yaw_easy )
 6b34  4a      lsr                        ; This is 0-31, where 0 is horizontal facing right, 8 is vertical,
 6b35  4a      lsr                        ; 16 is horizontal facing left, 31 is straight down
@@ -353,7 +357,7 @@ the thrust vectors into the XY screen coordinate frame, we can finally update th
 ; @add16_signed_mag_arg1 is used for position update since the position sign is always positive
 ; @add16_signed_mag_core is used to accumulate the thrust_y - gravity plus velocity
 ;
-.func ship_update:
+.func ACCEL:
 6c68  a202    ldx #$02                   ; Make two loops, one for X and one for Y.  Note that `i` is decremented by 2 each time through the loop @6ce7
 .label ship_update_loop:
 6c6a  8637    stx TEMP1                  ; Store the iterator temporary

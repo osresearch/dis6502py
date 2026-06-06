@@ -134,7 +134,7 @@
 3400 IO_watchdog
 3c00 IO_audio_latch
 3e00 IO_audio_reset
-4000 IO_vecgen_ram
+4000 VGRAM word
 4ba2 ships_jsrl word 6
 4bbc zoomed_in_settings_4bbc
 4e9e debris_subroutines_4e9e
@@ -239,47 +239,48 @@
 6008 dogame
 601b L601b
 603c L603c
-6040 L6040
-6043 L6043
+6040 PLYSTRT
+6043 MJRCON
 6052 L6052
 605c L605c
-6062 GameLoop_maybe
+6062 MAINLP
 606f L606f
-60a0 L60a0
-60a6 L60a6
-60ac L60ac
+6095 MOTION
+60a0 MOTNA
+60a6 N_MOT1
+60ac N_MOT2
 60c2 L60c2
 60cb L60cb
-60ce L60ce
+60ce BMREST
 60dc L60dc
 60ee L60ee
 6104 L6104
 6129 L6129
 6134 L6134
 6141 L6141
-614a L614a
+614a FRMEND
 6161 L6161
 6171 L6171
 6175 L6175
 6182 L6182
-6185 L6185
-6188 L6188
+6185 RTMAIN
+6188 MOTCHK
 6194 L6194
 619a L619a
-61a9 L61a9
-61ac L61ac
-61c0 call_init_game_thunk
+61a9 ATRCHK
+61ac PLYCHK
+61c0 L61c0
 61c3 abort_button_handler
 61ce L61ce
 61d8 game_next_level_setup
 61e9 L61e9
 61f9 L61f9
 6213 ResetGameState func
-6235 game_state_reinit_maybe func
+6235 PLYINIT func
 6288 bzero_ship_state
 629e return_x_plus_1_or_10 func
 62a7 mission_gravity byte 4
-62ab mission_button_handler func
+62ab TYPE func
 62bc ship_reset_saved_angle func
 62be ship_reset func
 62c6 ship_reset_bzero
@@ -288,9 +289,9 @@
 62e2 mission_lamps byte 4
 62e6 coin_inserted func
 6309 fuel_add_credit func
-6313 fuel_increase_limit_9999 func
+6313 GIVCRD func
 632a fuel_per_coin_bcd_table
-633c ship_command_yaw func
+633c ROTSHIP func
 6341 not_aborting
 634a yaw_momentum
 636c set_yaw_slow
@@ -310,7 +311,7 @@
 6404 IO_read_rotate_buttons func
 640c not_right
 6412 not_left
-6414 thrust_smoothing_maybe func
+6414 THRLVL func
 641c L641c
 6444 L6444
 6456 L6456
@@ -323,39 +324,39 @@
 6499 fuel_track_used
 649e fuel_used_loop
 64a8 fuel_drain_done
-64aa abort_procedure_update func
+64aa ABORT func
 64ff str_1100 byte 4
 6503 str_1300 byte 4
 6507 svec_right_shit
-6509 ship_vel_decay func
+6509 FRICTN func
 652d dvg_wait_done func
-6539 vec_draw_51ba_table func
-6567 vec_draw_subroutines func
+6539 SCAPE func
+6567 STARS func
 6592 vecgen_copy_10 func
 659e vec_clear_genbytes_37_3a func
-65ad draw_ship_prep_maybe func
+65ad MODULE func
 6637 DrawShip func
 6639 NextShipOpCode_maybe
 664c DrawShipVect
 665f DrawShipSVEC
 666e finish_ship_drawing_maybe func
 6684 shuffle_7_to_9 func
-669d debris_update func
+669d FLAME func
 6709 debris_position_update_2 func
 6728 debris_position_update func
 6771 debris_vectors
 6772 debris_array_maybe
-6795 draw_even_more_stuff func
+6795 MESDATA func
 67e3 FUN_67e3 func
 67eb DrawNumber_2 func
 67ed DrawNumber_and_copy func
 67f4 DrawNumber_3 func
 67f9 TwosComplement func
-67ff draw_bonus_maybe func
+67ff SITES func
 6876 vec_compute_offset_maybe func
-687e draw_push_start_screen func
-689e draw_out_of_fuel_screen func
-68d6 draw_level_over_screen func
+687e DSPRTP func
+689e STATUS func
+68d6 DSPMOT func
 692b string_table ptr 33
 696d string_table_fixup_something_else
 6979 str_LOW_ON_FUEL byte 11
@@ -388,9 +389,9 @@
 6ad5 str_YOU_CREATED_A_TWO_MILE_CRATER byte 29
 6af2 str_YOU_JUST_DESTROYED_A_100_MEGABUCK_LANDER byte 40
 6b1a str_THERE_WERE_NO_SURVIVORS byte 23
-6b32 ship_compute_accel_xy func
+6b32 FRCMLT func
 6b53 flip_to_other_half
-6b71 fuel_drain_thrust func
+6b71 BURN func
 6b7f fuel_thrust_multiply
 6b90 fuel_lost_to_crash_wrapper func
 6b96 fuel_lost_to_crash func
@@ -398,9 +399,9 @@
 6bb5 L6bb5
 6bd3 L6bd3
 6bdf rts_6bdf func
-6be0 score_add_landing_bonus func
+6be0 LNDADR func
 6c45 landing_bonus_amount
-6c68 ship_update func
+6c68 ACCEL func
 6c6a ship_update_loop
 6c8c skip_zoom
 6ca0 skip_physics
@@ -417,7 +418,7 @@
 6d2c opposite_underflow
 6d37 opposite_2c_carry
 6d3e same_sign
-6d4f GameRunningLoop func
+6d4f DECODE func
 6fb8 vec_letter_something func
 6ff9 debris_something_setup_gb3c func
 7022 explode_something_lots_math func
@@ -431,23 +432,24 @@
 7102 mult_start_round
 710c mult_bit_not_set
 7116 mult_continue_round
+711c SCAPCHG func
 72fe min16 func
 7316 return_b
 731a return_ax
-73a9 draw_lots_of_stuff func
+73a9 TRANS func
 74f8 VecPtrUpdate_dupe func
 7502 no_carry
 7503 VecRomJSRL func
-751b bcd_score_maybe func
+751b DISPLY func
 7576 score_landing_bonus func
-7595 debris_something func
+7595 BOOM func
 762d debris_get_animation_maybe2 func
 762f debris_get_animations_maybe func
 7655 debris0_setup
 7663 debris1_setup
 7671 debris2_setup
 767f debris3_setup
-7694 landed_choose_random func
+7694 DELTA func
 76bf multiply func
 76cc L76cc
 76d2 L76d2
@@ -512,18 +514,18 @@
 7ac2 thrust_lower
 7acc L7acc
 7ad2 L7ad2
-7ad6 nmi_check_dvg
+7ad6 nmtime
 7aeb wait_for_watchdog
 7aee nmi_check_coins
 7af9 nmi_no_coins
 7afd nmi_update_lights
 7b16 nmi_score_bcd_update
 7b20 nmi_time_bcd_update
-7b2b nmi_time_seconds_no_overflow
+7b2b nmi_seconds_no_overflow
 7b33 not_a_second
 7b41 L7b41
 7b46 L7b46
-7b50 nmi_rti
+7b50 nmexit
 7b57 DrawNumber_2_no_leading_zero func
 7b59 DrawNumber_no_leading_zero func
 7b5a DrawNumber func
