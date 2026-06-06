@@ -437,8 +437,11 @@
 7953 io_audio_set func
 795f io_lamps_set func
 796b coin_credit_configure func
-799b CoinMultTbl
+7983 L7983
+7998 L7998
+799b CoinMultTbl byte 4
 799f draw_insert_coin_screen func
+79c0 L79c0
 79c2 dec_to_bcd_16bit func
 79c6 dec_to_bcd func
 79d1 dd_loop

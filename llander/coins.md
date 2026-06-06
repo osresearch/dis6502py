@@ -4,6 +4,8 @@ This is interesting because it has to deal with potential (physical) attacks on 
 which apparently was a problem with some other arcade cabinets.  The memory mapped coin detectors
 are discussed in the button handling section.
 
+### Coin insertion switches
+
 ```
 ; The coin drop switches are only valid if they have been through
 ; 16 debounce timers, which is 16 * NMI/8, or about 0.5 seconds
@@ -107,4 +109,60 @@ are discussed in the button handling section.
 .label EndCoinCheck:
 7951  0a      ASL                        ; Shift it left (into the carry)
 7952  60      RTS                        ; and return the result to the caller
+```
+
+### Credits per coin and other config
+
+There are switches that select how many credits the player receives for each coin, how much
+fuel per credit, and the desired language (if the language ROM is installed).
+
+```
+.func coin_and_language_config:
+796b  ad0328  LDA IO_dsw1_RightCoin      ; Read the coin config switches
+796e  2903    AND #$03                   ; Mask out everything but the bottom two bits
+7970  aa      TAX                        ; .
+7971  bd9b79  LDA CoinMultTbl[0],X       ; Read the number of credits per coin from the table
+7974  8599    STA credits_per_coin       ; And store it in the global for later
+7976  a200    LDX #$00                   ;
+7978  ee0058  INC string_table_language_offset[0] ; If reading the language ROM gives 0xFF,
+797b  f006    BEQ set_language                  ; then default to using language 0 == English
+797d  ad0228  LDA IO_dsw1_2              ; Read the language configuration switches
+7980  2903    AND #$03                   ; Mask out everything but the bottom two bits
+7982  aa      TAX                        ; .
+.label set_language:
+7983  8621    STX language_setting       ; Store the language in the global
+7985  38      SEC                        ; Set the carry
+7986  ad0128  LDA IO_dsw1_1              ; Load the fuel configuration switches
+7989  2a      ROL                        ;
+798a  2a      ROL                        ;
+798b  2d0028  AND IO_dsw1_0              ;
+798e  290f    AND #$0f                   ;
+7990  6900    ADC #$00                   ;
+7992  c909    CMP #$09                   ;
+7994  9002    BCC L7998                  ;
+7996  a900    LDA #$00                   ;
+.label L7998:
+7998  8598    STA fuel_per_coin          ;
+799a  60      RTS                        ;
+
+.byte 799b CoinMultTbl 4 ; Coin multiplier table
+
+.func draw_insert_coin_screen:
+799f  a20c    LDX #$0c                   ;
+79a1  a598    LDA fuel_per_coin          ;
+79a3  18      CLC                        ;
+79a4  6918    ADC #$18                   ;
+79a6  20347a  JSR WriteText_xy           ;
+79a9  a917    LDA #$17                   ;
+79ab  204f7a  JSR WriteText              ;
+79ae  a905    LDA #$05                   ;
+79b0  204f7a  JSR WriteText              ;
+79b3  a586    LDA FrameCounter           ;
+79b5  2920    AND #$20                   ;
+79b7  f007    BEQ L79c0                  ;
+79b9  a200    LDX #$00                   ;
+79bb  a904    LDA #$04                   ;
+79bd  4c347a  JMP WriteText_xy           ;
+.label L79c0:
+79c0  60      RTS                        ;
 ```
