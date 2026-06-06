@@ -409,11 +409,11 @@
 76e9 sine_table byte 9
 76f2 sine_quadrants byte 4
 76f6 thrust_to_acc byte 16
-7818 SetDigitVecPtr func
+7818 DrawDigit func
 781e ChkSetDigitPntr
 7823 DisplayDigit
-7838 VecPtrUpdate func
-7842 VecPtr_no_overflow
+7838 VecCmdQueueUpdate func
+7842 VecCmdQueue_no_overflow
 7843 CalcDebrisPos func
 7859 NoIncX
 785a ChkYDebris

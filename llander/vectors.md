@@ -163,14 +163,14 @@ There are lots of helpers to copy short or long vector commands, as well as to s
 7b6a  4a      LSR                        ; right
 7b6b  4a      LSR                        ; four times to get the upper digit from the top nibble into `A`
 7b6c  28      PLP                        ; Restore the carry flag
-7b6d  201878  JSR SetDigitVecPtr         ; Draw the upper digit
+7b6d  201878  JSR DrawDigit              ; Draw the upper digit
 7b70  a538    LDA GenByte_0038           ; Do we do more digits?
 7b72  d001    BNE DoLowerDigit           ; if so do the lower digit for this value
 7b74  18      CLC                        ; Clear the carry (we will always do zeros now)
 .label DoLowerDigit:
 7b75  a637    LDX GenByte_0037           ; Get the current digit address
 7b77  b500    LDA state_00,X             ; Zero-page array read for the digit
-7b79  201878  JSR SetDigitVecPtr         ; Draw the lower digit
+7b79  201878  JSR DrawDigit              ; Draw the lower digit
 7b7c  a637    LDX GenByte_0037           ; Decrement the digit address
 7b7e  ca      DEX                        ; to move to the next digit
 7b7f  c638    DEC GenByte_0038           ; Decrement our digit counter
@@ -183,7 +183,7 @@ There are lots of helpers to copy short or long vector commands, as well as to s
 ; This will skip leading zeros when outputing numbers.
 ; `A` bottom four bits are the BCD digit to draw
 ; `C` include leading zeros if clear
-.func SetDigitVecPtr:
+.func DrawDigit:
 7818  9004    BCC ChkSetDigitPntr        ; If carry is clear, always display the digit
 781a  290f    AND #$0f                   ; If not, check to see if the bottom nibble is zero
 781c  f005    BEQ DisplayDigit           ; If digit is zero, then draw character 0 which is a blank
@@ -201,20 +201,20 @@ There are lots of helpers to copy short or long vector commands, as well as to s
 782d  bda357  LDA CharPtrTbl_high[0],X   ; Read the high-byte of the font command
 7830  c8      INY                        ; Increment `Y`
 7831  9127    STA (VecCmdQueue),Y        ; Store the high byte at the next location
-7833  203878  JSR VecPtrUpdate           ; Add `Y` to the vector ram pointer
+7833  203878  JSR VecCmdQueueUpdate      ; Add `Y` to the vector ram pointer
 7836  28      PLP                        ; Restore the carry flag
 7837  60      RTS                        ; Return to the caller
 
 ; Increment the vector ram command address
 ; `Y` number of bytes minus one added to the vector command list
-.func VecPtrUpdate:
+.func VecCmdQueueUpdate:
 7838  98      TYA                        ; Move the number of bytes to `A`
 7839  38      SEC                        ; Set the carry, which will add the one extra
-783a  6527    ADC VecCmdQueue            ; Add `Y+1` to the pointer
-783c  8527    STA VecCmdQueue            ; Store it back in the pointer
-783e  9002    BCC VecPtr_no_overflow     ; If no overflow skip the increment
-7840  e628    INC VecCmdQueue_high       ; Overflowed, so increment the high byte
-.label VecPtr_no_overflow:
+783a  6527    ADC VecCmdQueue            ; (u16) VecCmdQueue += `Y` + 1
+783c  8527    STA VecCmdQueue            ; .
+783e  9002    BCC VecCmdQueue_no_overflow ; .
+7840  e628    INC VecCmdQueue_high       ; .
+.label VecCmdQueue_no_overflow:
 7842  60      RTS                        ; Return to the caller
 ```
 
