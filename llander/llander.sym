@@ -148,12 +148,78 @@
 5742 font_3
 5794 font_9
 57a2 CharPtrTbl word 47
-5800 string_table_lang_offset
-5804 string_table_french
-5834 string_table_spanish
-5864 string_table_german
-5fa1 language_offset_maybe
-5fa4 string_table_fixup_something
+5800 string_table_language_offset byte 3
+5804 string_table_localized ptr 72
+5894 str_APPUYER_SUR_START byte 17
+58a5 str_PULSAR_START byte 12
+58b1 str_STARTKNOEPFE_DRUECKEN byte 21
+58c6 str_CARBURANT_DIMINUE byte 17
+58d7 str_POCO_COMBUSTIBLE byte 16
+58e7 str_TREIBSTOFF_GEHT_AUS byte 19
+58fa str_PLUS_DE_CARBURANT byte 17
+590b str_SIN_COMBUSTIBLE byte 15
+591a str_TREIBSTOFFTANKS_LEER byte 20
+592e str_PERDUES byte 7
+5935 str_PERDIDAS byte 8
+593d str_TEILVERLUST byte 11
+5948 str_INTRODUIRE_LES_PIECES byte 21
+595d str_INSERTE_FICHAS byte 14
+596b str_GELD_AUSWERFEN byte 14
+5979 str_PAR_PIECE byte 9
+5982 str_POR_FICHA byte 9
+598b str_ZUKAUF_PRO_MUENZE byte 17
+599c str_RESERVOIR_AUXILIAIRE_DE_CARBURANT_DETRUIT byte 41
+59c5 str_TANQUES_AUXILIARES_DE_COMBUSTIBLE_DESTRUIDOS byte 44
+59f1 str_ZUSATZTREIBSTOFFTANKS_ZERSTOERT byte 31
+5a10 str_FELICITATIONS byte 13
+5a1d str_FELICITACIONES byte 14
+5a2b str_GRATULATION byte 11
+5a36 str_VOUS_AVEZ_ATTERRI_DIFFICILEMENT byte 31
+5a55 str_USTED_ALUNIZO_VIOLENTAMENTE byte 27
+5a70 str_SIE_SIND_HART_GELANDET byte 22
+5a86 str_SPLENDIDE_ATTERRISSAGE byte 22
+5a9c str_FUE_UN_GRAN_ALUNIZAJE byte 21
+5ab1 str_DIES_WAR_EINE_GROSSARTIGE_LANDUNG byte 33
+5ad2 str_LE_EAGLE_A_ATTERRI byte 18
+5ae4 str_EL_AGUILA_HA_ALUNIZADO byte 22
+5afa str_EAGLE_IST_GELANDET byte 18
+5b0c str_LE_COLUMBIA_A_ATTERRI byte 21
+5b21 str_EL_COLUMBIA_HA_ALUNIZADO byte 24
+5b39 str_COLUMBIA_IST_GELANDET byte 21
+5b4e str_VOUS_AVEZ_ATTERRI byte 17
+5b5f str_USTED_HA_ALUNIZADO byte 18
+5b71 str_SIE_SIND_GELANDET byte 17
+5b82 str_LE_SUPPORT_DE_SAUVETAGE_EST_PARTI byte 33
+5ba3 str_EQUIPO_DE_SUPERVIVENCIA_DESTRUIDO byte 33
+5bc4 str_LEBENSRETTUNGSSYSTEME_SIND_AUSGEFALLEN byte 38
+5bea str_VOTRE_VOYAGE_EST_SANS_RETOUR byte 28
+5c06 str_SU_VIAJE_ES_DE_IDA_SOLAMENTE byte 28
+5c22 str_REISE_OHNE_RUECKKEHR byte 20
+5c36 str_PERDU_SANS_ESPOIR byte 17
+5c47 str_LAMENTABLEMENTE_USTED_NO_PUEDE_VOLVER byte 37
+5c6c str_KEIN_RUECKSTART_ZUR_ERDE_MOEGLICH byte 33
+5c8d str_SYSTEME_DE_COMMUNICATION_DETRUIT byte 32
+5cad str_SISTEMA_DE_COMUNICACION_DESTRUIDO byte 33
+5cce str_KOMMUNIKATIONSSYSTEM_ZERSTOERT byte 30
+5cec str_VOUS_AVEZ_CREE_UN_CRATERE_DE_DEUX_KILOMETRES byte 44
+5d18 str_USTED_CREO_UN_CRATER_DE_2_KILOMETROS byte 36
+5d3c str_SIE_HABEN_EINEN_2_KILOMETER_KRATER_AUFGERISSEN byte 46
+5d6a str_VOUS_AVEZ_UN_CRASH byte 18
+5d7c str_DEMOLER byte 7
+5d83 str_50_000_000_MARK_SIND_IN_DIE_LUFT_GEJAGT byte 39
+5daa str_IL_NEY_A_PAS_DE_SURVIVANTS byte 26
+5dc4 str_NO_HUBO_SOBREVIVIENTES byte 22
+5dda str_KEINE_UEBERLEBENDEN byte 19
+5df4 str__PUNTOS byte 7
+5dfb str__PUNKTE byte 7
+5e02 str_CHOIX_DU_JEU byte 12
+5e0e str_ELEGIR_JUEGO byte 12
+5e1a str_SPIELWAHL byte 9
+5e23 str__UNITES_DE_CARBURANT_ byte 21
+5e38 str__UNIDADES_DE_COMBUSTIBLE_ byte 25
+5e51 str__TREIBSTOFF_ byte 12
+5fa1 localized_language_offset byte 3
+5fa4 localized_string_offset byte 93
 6001 InitGame func
 6008 GameLoop func
 6062 GameLoop_maybe
@@ -382,6 +448,12 @@
 7a32 WriteText_newline func
 7a34 WriteText_wrapper func
 7a4f WriteText func
+7a56 write_localized_string
+7a6b write_language_zero
+7a77 L7a77
+7a84 L7a84
+7a9a call_draw_string
+7a9e write_unlocalized_string
 7aa7 rts_7aa7 func
 7aa8 NMI_handler func
 7aae nmi_thrust_process
