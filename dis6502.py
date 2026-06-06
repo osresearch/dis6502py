@@ -284,7 +284,7 @@ class Dis6502:
 	def dis_instr(self, addr):
 		opcode = self.read8(addr)
 		ip = opcode_table[opcode]
-		fmt = ip.name
+		fmt = ip.name.lower()
 		if ip.length == 1:
 			operand = 0
 		elif ip.length == 2:
