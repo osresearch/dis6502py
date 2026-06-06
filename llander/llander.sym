@@ -1,110 +1,122 @@
-0000 state_00
-0001 actual_thrust_maybe
-0002 ship_angle_modulo
-0003 yaw_rate word
-0005 yaw_slow
+0000 SOFT_0
+0001 THRUST
+0002 SHIP
+0003 SHPINE word
+0005 INERTIA word
 0006 yaw_nonzero
-0007 ship_pos word 2
-000b thrust_value
-000d vec_letter_ptr_maybe
-000f score_dec_maybe
-0019 ThisDebrisX
-001b ThisDebrisY
-0021 language_setting
-0022 game_state_flags
-0023 mission_difficulty
-0024 mission_debounce
-0025 start_game_debounce
+0007 XCURADJ word
+0009 YCURADJ word
+000b THRSTLV word
+000f YCURR word
+0011 XCURR word
+0013 MDWAIT word
+0015 XPRE word
+0017 YPRE word
+0019 XPOS word
+001b YPOS word
+001d XPOLAN word
+001f YPOLAN word
+0021 LANG
+0022 GAMODE
+0023 PLYMOD
+0024 TYPCNT
+0025 STRTCNT
 0026 diag_step_debounce
-0027 VecCmdQueue word
-0029 vecdata_ptr_start
-002b draw_string_ptr word
-002d VecCmdQueue_copy word
-002f VecCmdQueue_copy2 word
-0031 vec_letter_ptr_something
-0033 nmi_counter_4
-0034 nmi_counter_next
-0037 GenByte_0037
-0038 GenByte_0038
-0039 GenByte_0039
-003a GenByte_003a
-003b GenByte_003b
-003c io_genbyte
-003d GenByte_003c
-003e GenByte_003e
-003f GenByte_003f
-0040 GenByte_0040
-0041 GenByte_0041
-0042 mult_y
-0043 mult_a
-0044 mult_acc word
-0046 ship_accel_sign byte 2
-0048 delta2 word
-004a delta1 word
-004c delta2_sign
-004d delta1_sign
-004e drawing_scale
-004f score_dec_something1
-0051 score_dec_something2
-0055 ship_enable_x
-0056 ship_abort
-0057 ship_enable_y
-0058 ship_accel byte 2
-005a ship_vel_sign_x
-005d ship_state_maybe
-005e ship_vel word 2
-0062 touchdown_velocities_maybe
-0063 gravity
-0064 VecPtr word
-0066 ship_angle word
-0067 ship_angle_high word
-0068 abort_debounce
-0073 dvg_timer
-0074 nmi_counter
-0075 divisor
-0076 divisor2
-0077 remainder
-0078 dividend_working
-007d min16_a word
-007e min16_a_high word
-007f min16_b word
-0080 min16_b_high word
-0082 thrust_delta_last_raw
-0083 thrust_high
-0084 thrust_low
-0085 thrust_something_counter
-0086 FrameCounter
-0087 nmi_counter_250
-0088 lamps_cache
-0089 audio_cache
-008a delay_6
-008b vec_src_offst_maybe
-008c vecgen_offset_something
-008d time_in_seconds
-008e landing_bonus
-008f GenByte08f
-0090 fuel_lost_timeout
-0091 random_message
-0092 bcd_output byte 3
-0095 fuel_lost_bcd
-0097 fuel_state
-0098 fuel_per_coin
-0099 credits_per_coin
-009c time_bcd byte 2
-009e score_bcd_maybe byte 3
-00a1 fuel_used byte 3
-00a4 score_bcd
-00a9 bcd_score_maybe2
-00ac fuel_tank byte 3
-00b0 math_something
-00b2 ValidCoins
-00b3 WaitCoinTimer_0
-00b4 WaitCoinTimer_2
-00b6 NumCredits_maybe
-00b7 CoinDropTimers byte 3
-00ba coin_check_counter
-00c1 state_c1
-00c2 state_c2
+0027 RAMPTR word
+0029 PTRTMP word
+002b POINTR word
+002d RAMLUN word
+002f LABPTR word
+0031 TBLADDR word
+0033 TABSIT byte 4
+0037 TEMP1
+0038 TEMP2
+0039 TEMP3
+003a TEMP4
+003b TEMP5
+003c TEMP6
+003d DELX word
+003f DELY word
+0041 EXP
+0042 MULTR
+0043 MULTC
+0044 PROD word
+0046 SGNTRX
+0047 SGNTRY
+0048 SUMSOR word
+004a SUMDES word
+004c SSORSGN
+004d SDESSGN
+004e LUNARNUM
+004f LUNAROT
+0050 SCROLL word
+0052 SCRADD byte 3
+0055 MJRFLG
+0056 INDEX word
+0058 XTHRUST
+0059 YTHRUST
+005a SGNVLX
+005b SGNVLY
+005d COLFLG
+005e VELX word
+0060 VELY word
+0062 M_CLFL
+0063 GRAVITY
+0064 RAMLD word
+0066 ROT word
+0068 RSTDEB
+0069 STACK word
+006b STKSPCE byte 8
+0073 INTFLG
+0074 INTCNT
+0075 DIVSOR
+0076 QUOT word
+0078 MQ
+0079 DISTXL word
+007b DISTXR word
+007d DISTYL word
+007f DISTYR word
+0081 DISTFLG
+0082 POTVAL
+0083 POTMIN
+0084 PTRNGE
+0085 POTUSE
+0086 FRAME
+0087 TIMVAL
+0088 LAMPZP
+0089 NOISZP
+008a VGCOUNT
+008b OFFSET word
+008d TIMER
+008e BNFACT
+008f VGBRIT
+0090 MSCNT1
+0091 RNDOM
+0092 NUMB1 byte 3
+0095 FLDED byte 2
+0097 CRDTFLG
+0098 C_OPT
+0099 M2_OPT
+009a ARRWX
+009b ARRWY
+009c GMTIME byte 2
+009e FLMIN byte 3
+00a1 FLUSE byte 3
+00a4 SCORE word
+00a6 VELOCX byte 3
+00a9 VELOCY byte 3
+00ac FUEL byte 3
+00af ALTITD byte 3
+00b2 _CCTIM
+00b3 _PSTSL
+00b4 _LMTIM
+00b5 _CNCT byte 4
+00b9 INTCT
+00ba TEST
+00bb TSFLAG
+00bd SWITCH word
+00bf OLDSW word
+00c1 SOFT.1 word
 2000 IO_in0
 2400 IO_in1_start
 2401 IO_in1_coin byte 3
@@ -123,13 +135,14 @@
 3c00 IO_audio_latch
 3e00 IO_audio_reset
 4000 IO_vecgen_ram
+4ba2 ships_jsrl word 6
 4bbc zoomed_in_settings_4bbc
 4e9e debris_subroutines_4e9e
 4eec debris0_anim
 4ef8 debris1_anim
 4f04 debris2_anim
 4f10 debris3_anim
-51ba vector_table_of_some_sort
+51ba lunar_minor_scape_jsrl word 20
 51e2 vectors_not_zoomed_51e2
 52fe vec_subroutines_zoomed_52fe
 53ee twenty_subroutines word 20
@@ -222,12 +235,45 @@
 5e51 str__TREIBSTOFF_ byte 12
 5fa1 localized_language_offset byte 3
 5fa4 localized_string_offset byte 93
-6001 InitGame func
-6008 GameLoop func
+6001 start func
+6008 dogame
+601b L601b
+603c L603c
+6040 L6040
+6043 L6043
+6052 L6052
+605c L605c
 6062 GameLoop_maybe
+606f L606f
+60a0 L60a0
+60a6 L60a6
+60ac L60ac
+60c2 L60c2
+60cb L60cb
+60ce L60ce
+60dc L60dc
+60ee L60ee
+6104 L6104
+6129 L6129
+6134 L6134
+6141 L6141
+614a L614a
+6161 L6161
+6171 L6171
+6175 L6175
+6182 L6182
+6185 L6185
+6188 L6188
+6194 L6194
+619a L619a
+61a9 L61a9
+61ac L61ac
 61c0 call_init_game_thunk
 61c3 abort_button_handler
+61ce L61ce
 61d8 game_next_level_setup
+61e9 L61e9
+61f9 L61f9
 6213 ResetGameState func
 6235 game_state_reinit_maybe func
 6288 bzero_ship_state
@@ -436,8 +482,8 @@
 7951 EndCoinCheck
 7953 io_audio_set func
 795f io_lamps_set func
-796b coin_credit_configure func
-7983 L7983
+796b coin_and_language_config func
+7983 set_language
 7998 L7998
 799b CoinMultTbl byte 4
 799f draw_insert_coin_screen func

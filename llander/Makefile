@@ -11,6 +11,7 @@ llander.sym: FORCE
 		strings.md \
 		zeropage.md \
 		coins.md \
+		game.md \
 		tick.md \
 		selftest.md \
 		footer.md \

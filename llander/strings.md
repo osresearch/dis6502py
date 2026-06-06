@@ -15,42 +15,42 @@ has the high bit set as a terminator.
 ; Copies the font subroutines to @VecCmdQueue
 ; Sets @draw_string_ptr to point to the end of the string
 .func DrawString:
-79f2  862c    STX draw_string_ptr_high   ; (u16*) draw_string_ptr = `X:Y`
-79f4  842b    STY draw_string_ptr        ; .
-79f6  a900    LDA #$00                   ; for i = 0 ... strlen * 2
+79f2  862c    stx POINTR_high            ; (u16*) draw_string_ptr = `X:Y`
+79f4  842b    sty POINTR                 ; .
+79f6  a900    lda #$00                   ; for i = 0 ... strlen * 2
 .label copy_next_vec_instruction:
-79f8  4a      LSR                        ; halve i since we're copying 16-bit `JSRL` vector subroutine
-79f9  a8      TAY                        ; calls for each letter and it is going up by two each byte
-79fa  b12b    LDA (draw_string_ptr),Y    ; char = (u8*) draw_string_ptr[Y/2]
-79fc  8539    STA GenByte_0039           ; Cache it in gen byte
-79fe  297f    AND #$7f                   ; strip out the terminating high bit if present:
-7a00  aa      TAX                        ; X = char & 0x7F
-7a01  98      TYA                        ; Y = 2*Y
-7a02  0a      ASL                        ; (double it back to by index by words)
-7a03  a8      TAY                        ; .
-7a04  bda257  LDA CharPtrTbl[0],X        ; *(u16*) VecCmdQueue[Y] = (u16) CharPtrTbl[char]
-7a07  9127    STA (VecCmdQueue),Y        ; (note that the char is stored in ROM already doubled for indexing by words)
-7a09  c8      INY                        ; .
-7a0a  bda357  LDA CharPtrTbl_high[0],X   ; .
-7a0d  9127    STA (VecCmdQueue),Y        ; .
-7a0f  c8      INY                        ; Y += 2 (including previous INY)
-7a10  98      TYA                        ; and move total bytes copied back into `A`
-7a11  2439    BIT GenByte_0039           ; Test the cached version of the letter
-7a13  10e3    BPL copy_next_vec_instruction ; If positive, keep copying
-7a15  18      CLC                        ; Clear carry for addition
-7a16  6527    ADC VecCmdQueue            ; (u16*) VecCmdQueue += (u8) 2*strlen (in `A`)
-7a18  8527    STA VecCmdQueue            ; .
-7a1a  9002    BCC increment_char_ptr     ; .
-7a1c  e628    INC VecCmdQueue_high       ; .
+79f8  4a      lsr                        ; halve i since we're copying 16-bit `JSRL` vector subroutine
+79f9  a8      tay                        ; calls for each letter and it is going up by two each byte
+79fa  b12b    lda (POINTR),Y             ; char = (u8*) draw_string_ptr[Y/2]
+79fc  8539    sta TEMP3                  ; Cache it in gen byte
+79fe  297f    and #$7f                   ; strip out the terminating high bit if present:
+7a00  aa      tax                        ; X = char & 0x7F
+7a01  98      tya                        ; Y = 2*Y
+7a02  0a      asl                        ; (double it back to by index by words)
+7a03  a8      tay                        ; .
+7a04  bda257  lda CharPtrTbl[0],X        ; *(u16*) VecCmdQueue[Y] = (u16) CharPtrTbl[char]
+7a07  9127    sta (RAMPTR),Y             ; (note that the char is stored in ROM already doubled for indexing by words)
+7a09  c8      iny                        ; .
+7a0a  bda357  lda CharPtrTbl_high[0],X   ; .
+7a0d  9127    sta (RAMPTR),Y             ; .
+7a0f  c8      iny                        ; Y += 2 (including previous INY)
+7a10  98      tya                        ; and move total bytes copied back into `A`
+7a11  2439    bit TEMP3                  ; Test the cached version of the letter
+7a13  10e3    bpl copy_next_vec_instruction ; If positive, keep copying
+7a15  18      clc                        ; Clear carry for addition
+7a16  6527    adc RAMPTR                 ; (u16*) VecCmdQueue += (u8) 2*strlen (in `A`)
+7a18  8527    sta RAMPTR                 ; .
+7a1a  9002    bcc increment_char_ptr     ; .
+7a1c  e628    inc RAMPTR_high            ; .
 .label increment_char_ptr:
-7a1e  98      TYA                        ; Copy number of bytes copied to vector ram back to A
-7a1f  4a      LSR                        ; Divide it by two to get the number of characters in the string
-7a20  652b    ADC draw_string_ptr        ; (u16) draw_string_ptr += (u8) 2*strlen
-7a22  852b    STA draw_string_ptr        ; so it points to the end of the string
-7a24  9002    BCC draw_string_return     ; .
-7a26  e62c    INC draw_string_ptr_high   ; .
+7a1e  98      tya                        ; Copy number of bytes copied to vector ram back to A
+7a1f  4a      lsr                        ; Divide it by two to get the number of characters in the string
+7a20  652b    adc POINTR                 ; (u16) draw_string_ptr += (u8) 2*strlen
+7a22  852b    sta POINTR                 ; so it points to the end of the string
+7a24  9002    bcc draw_string_return     ; .
+7a26  e62c    inc POINTR_high            ; .
 .label draw_string_return:
-7a28  60      RTS                        ; return to the caller
+7a28  60      rts                        ; return to the caller
 ```
 
 
@@ -61,64 +61,64 @@ some sort of fixup that I haven't figured out yet:
 ; Write a localized string to the screen
 ; `A` String id
 .func WriteText:
-7a4f  c918    CMP #$18                   ; If id < 24
-7a51  9003    BCC write_localized_string ; then this is a localized string (display strings start at 24 == "X")
-7a53  0a      ASL                        ; multiply id by two since we need a word address
-7a54  d048    BNE write_unlocalized_string ;
+7a4f  c918    cmp #$18                   ; If id < 24
+7a51  9003    bcc write_localized_string ; then this is a localized string (display strings start at 24 == "X")
+7a53  0a      asl                        ; multiply id by two since we need a word address
+7a54  d048    bne write_unlocalized_string ;
 .label write_localized_string:
-7a56  48      PHA                        ; Cache the string id
-7a57  a621    LDX language_setting       ; Read the current language (set by dip switches)
-7a59  f010    BEQ write_language_zero    ; If language is zero (english) handle it specially
-7a5b  ca      DEX                        ; Starting index into the localized string table
-7a5c  7da15f  ADC localized_language_offset[0],X ; based on the language setting - 1
-7a5f  aa      TAX                        ; Strings in the localized table
-7a60  bda45f  LDA localized_string_offset[0],X ; ???
-7a63  a200    LDX #$00                   ;
-7a65  0a      ASL                        ;
-7a66  900f    BCC L7a77                  ;
-7a68  ca      DEX                        ;
-7a69  b00c    BCS L7a77                  ;
+7a56  48      pha                        ; Cache the string id
+7a57  a621    ldx LANG                   ; Read the current language (set by dip switches)
+7a59  f010    beq write_language_zero    ; If language is zero (english) handle it specially
+7a5b  ca      dex                        ; Starting index into the localized string table
+7a5c  7da15f  adc localized_language_offset[0],X ; based on the language setting - 1
+7a5f  aa      tax                        ; Strings in the localized table
+7a60  bda45f  lda localized_string_offset[0],X ; ???
+7a63  a200    ldx #$00                   ;
+7a65  0a      asl                        ;
+7a66  900f    bcc L7a77                  ;
+7a68  ca      dex                        ;
+7a69  b00c    bcs L7a77                  ;
 .label write_language_zero:
-7a6b  e908    SBC #$08                   ; There's some fixups, not sure what is going on here
-7a6d  c90c    CMP #$0c                   ;
-7a6f  b013    BCS L7a84                  ;
-7a71  aa      TAX                        ;
-7a72  bd6d69  LDA string_table_fixup_something_else,X ;
-7a75  a200    LDX #$00                   ;
+7a6b  e908    sbc #$08                   ; There's some fixups, not sure what is going on here
+7a6d  c90c    cmp #$0c                   ;
+7a6f  b013    bcs L7a84                  ;
+7a71  aa      tax                        ;
+7a72  bd6d69  lda string_table_fixup_something_else,X ;
+7a75  a200    ldx #$00                   ;
 .label L7a77:
-7a77  18      CLC                        ;
-7a78  a002    LDY #$02                   ;
-7a7a  712f    ADC (VecCmdQueue_copy2),Y  ; Maybe special characters? I'm really not sure yet.
-7a7c  912f    STA (VecCmdQueue_copy2),Y  ;
-7a7e  8a      TXA                        ;
-7a7f  c8      INY                        ;
-7a80  712f    ADC (VecCmdQueue_copy2),Y  ;
-7a82  912f    STA (VecCmdQueue_copy2),Y  ;
+7a77  18      clc                        ;
+7a78  a002    ldy #$02                   ;
+7a7a  712f    adc (LABPTR),Y             ; Maybe special characters? I'm really not sure yet.
+7a7c  912f    sta (LABPTR),Y             ;
+7a7e  8a      txa                        ;
+7a7f  c8      iny                        ;
+7a80  712f    adc (LABPTR),Y             ;
+7a82  912f    sta (LABPTR),Y             ;
 .label L7a84:
-7a84  68      PLA                        ; Restore original string id from the stack
-7a85  0a      ASL                        ; Double it to get a word offset
-7a86  c930    CMP #$30                   ; Check if the original id is >= 24
-7a88  b014    BCS write_unlocalized_string ; this is a non-localized string (24 == "X")
-7a8a  a621    LDX language_setting       ; If the language is zero
-7a8c  f010    BEQ write_unlocalized_string ; then this is also un-localized
-7a8e  ca      DEX                        ; Get the starting
-7a8f  18      CLC                        ; string id in the big localized string table
-7a90  7d0058  ADC string_table_language_offset[0],X ; for this string language and add it to the string id
-7a93  aa      TAX                        ; Read `A:Y` = string_table_localized[string_id + string_table_lang_offset[language-1]]
-7a94  bc0458  LDY string_table_localized[0],X ; low byte
-7a97  bd0558  LDA string_table_localized_high[0],X ; and high bytes fo the pointer
+7a84  68      pla                        ; Restore original string id from the stack
+7a85  0a      asl                        ; Double it to get a word offset
+7a86  c930    cmp #$30                   ; Check if the original id is >= 24
+7a88  b014    bcs write_unlocalized_string ; this is a non-localized string (24 == "X")
+7a8a  a621    ldx LANG                   ; If the language is zero
+7a8c  f010    beq write_unlocalized_string ; then this is also un-localized
+7a8e  ca      dex                        ; Get the starting
+7a8f  18      clc                        ; string id in the big localized string table
+7a90  7d0058  adc string_table_language_offset[0],X ; for this string language and add it to the string id
+7a93  aa      tax                        ; Read `A:Y` = string_table_localized[string_id + string_table_lang_offset[language-1]]
+7a94  bc0458  ldy string_table_localized[0],X ; low byte
+7a97  bd0558  lda string_table_localized_high[0],X ; and high bytes fo the pointer
 .label call_draw_string:
-7a9a  aa      TAX                        ; Convert the string pointer from `A:Y` into `X:Y`
-7a9b  4cf279  JMP DrawString             ; and tail call @DrawString
+7a9a  aa      tax                        ; Convert the string pointer from `A:Y` into `X:Y`
+7a9b  4cf279  jmp DrawString             ; and tail call @DrawString
 .label write_unlocalized_string:
-7a9e  aa      TAX                        ; Index into the english string table
-7a9f  bc2b69  LDY string_table[0],X      ; and read the low
-7aa2  bd2c69  LDA string_table_high[0],X ; and high bytes into `A:Y`
-7aa5  d0f3    BNE call_draw_string       ;
+7a9e  aa      tax                        ; Index into the english string table
+7a9f  bc2b69  ldy string_table[0],X      ; and read the low
+7aa2  bd2c69  lda string_table_high[0],X ; and high bytes into `A:Y`
+7aa5  d0f3    bne call_draw_string       ;
 
 ; Shared return instruction for a few functions
 .func rts_7aa7:
-7aa7  60      RTS                        ; Return to caller
+7aa7  60      rts                        ; Return to caller
 ```
 
 
@@ -132,7 +132,7 @@ drawing text, and then fall-through into the @WriteText function to actually dra
 ; `X`: String ID
 ; `A` is set to 0x80, which will cause @WriteText_xy to exit after doing the scale setting
 .func WriteText_no_draw:
-7a32  a980    LDA #$80                   ; tail call to @WriteText_xy(X, 0x80)
+7a32  a980    lda #$80                   ; tail call to @WriteText_xy(X, 0x80)
 
 ; Write strings in the correct location.
 ;
@@ -143,21 +143,21 @@ drawing text, and then fall-through into the @WriteText function to actually dra
 ; `A`: Flags?
 ;
 .func WriteText_xy:
-7a34  48      PHA                        ; cache the flags on the stack
-7a35  8a      TXA                        ;
-7a36  18      CLC                        ;
-7a37  690c    ADC #$0c                   ; `A:Y` = &string_xy_locations[X]
-7a39  a8      TAY                        ; .
-7a3a  a955    LDA #$55                   ; .
-7a3c  6900    ADC #$00                   ; .
-7a3e  a627    LDX VecCmdQueue            ; VecCmdQueue_copy2 = (u160 VecCmdQueue
-7a40  862f    STX VecCmdQueue_copy2      ; . why make this copy?
-7a42  a628    LDX VecCmdQueue_high       ; .
-7a44  8630    STX VecCmdQueue_copy2_high ; .
-7a46  20cd7e  JSR VecCmd_copy_4          ; Copy the 8 bytes from `A:Y` to the vector generator
-7a49  20107f  JSR WriteText_set_size_7   ; Reset the scale for drawing the text
-7a4c  68      PLA                        ; Restore `A` from the stack
-7a4d  3058    BMI rts_7aa7               ; If bit 7 in `A` was not set, fall through into @WriteText
+7a34  48      pha                        ; cache the flags on the stack
+7a35  8a      txa                        ;
+7a36  18      clc                        ;
+7a37  690c    adc #$0c                   ; `A:Y` = &string_xy_locations[X]
+7a39  a8      tay                        ; .
+7a3a  a955    lda #$55                   ; .
+7a3c  6900    adc #$00                   ; .
+7a3e  a627    ldx RAMPTR                 ; VecCmdQueue_copy2 = (u160 VecCmdQueue
+7a40  862f    stx LABPTR                 ; . why make this copy?
+7a42  a628    ldx RAMPTR_high            ; .
+7a44  8630    stx LABPTR_high            ; .
+7a46  20cd7e  jsr VecCmd_copy_4          ; Copy the 8 bytes from `A:Y` to the vector generator
+7a49  20107f  jsr WriteText_set_size_7   ; Reset the scale for drawing the text
+7a4c  68      pla                        ; Restore `A` from the stack
+7a4d  3058    bmi rts_7aa7               ; If bit 7 in `A` was not set, fall through into @WriteText
 ```
 
 ```
@@ -167,9 +167,9 @@ drawing text, and then fall-through into the @WriteText function to actually dra
 ```
 ; Reset the vector generator to a scale of 7 for drawing the text
 .func WriteText_set_size_7:
-7f10  a955    LDA #$55                   ; `A:Y` = @vecgen_set_scale_7
-7f12  a0ae    LDY #$ae                   ; .
-7f14  4ccd7e  JMP VecCmd_copy_4          ; tail call to @VecCmd_copy_4
+7f10  a955    lda #$55                   ; `A:Y` = @vecgen_set_scale_7
+7f12  a0ae    ldy #$ae                   ; .
+7f14  4ccd7e  jmp VecCmd_copy_4          ; tail call to @VecCmd_copy_4
 ```
 
 ```

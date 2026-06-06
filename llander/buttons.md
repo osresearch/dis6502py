@@ -46,10 +46,6 @@ To avoid read-modify-write cycles when updating the lamps or audio devices, the 
 of the last value written in a global variable and uses that as its cache.  The functions take two
 parameters and act as a SET and RESET value.
 
-```
-.byte 88 lamps_cache ; Cache of last value written to the lamp hardware
-.byte 89 audio_cache ; Cache of last value written to the audio hardware
-.byte 3c io_genbyte ; Temp variable for the io functions
 
 ```
 ; Set the audio output hardware
@@ -62,12 +58,12 @@ parameters and act as a SET and RESET value.
 ; output = cache
 
 .func io_audio_set:
-7953  2589    AND audio_cache            ; Mask the last written value to preserve the keep bits in `A`
-7955  863c    STX io_genbyte             ; Store the set bits from `X` in the temp variable
-7957  053c    ORA io_genbyte             ; Set the set bits in `A`
-7959  8d003c  STA IO_audio_latch         ; Write the new set bits and the kept bits out to the audio hardware
-795c  8589    STA audio_cache            ; Store this last written value in the cache
-795e  60      RTS                        ; And we're done!
+7953  2589    and NOISZP                 ; Mask the last written value to preserve the keep bits in `A`
+7955  863c    stx TEMP6                  ; Store the set bits from `X` in the temp variable
+7957  053c    ora TEMP6                  ; Set the set bits in `A`
+7959  8d003c  sta IO_audio_latch         ; Write the new set bits and the kept bits out to the audio hardware
+795c  8589    sta NOISZP                 ; Store this last written value in the cache
+795e  60      rts                        ; And we're done!
 
 ; Set the lamps hardware
 ;
@@ -78,10 +74,10 @@ parameters and act as a SET and RESET value.
 ; cache = (keep & cache) | set_bits
 ; output = cache
 .func io_lamps_set:
-795f  2588    AND lamps_cache            ; Mask the last written value to preserve the keep bits in `A`
-7961  863c    STX io_genbyte             ; Store the set bits from `X` in the temp variable
-7963  053c    ORA io_genbyte             ; Set the set bits in `A`
-7965  8d0032  STA IO_output_latch        ; Write the new set bits and the kept bits out to the lamp hardware
-7968  8588    STA lamps_cache            ; Store this last written value in the cache
-796a  60      RTS                        ; And we're done!
+795f  2588    and LAMPZP                 ; Mask the last written value to preserve the keep bits in `A`
+7961  863c    stx TEMP6                  ; Store the set bits from `X` in the temp variable
+7963  053c    ora TEMP6                  ; Set the set bits in `A`
+7965  8d0032  sta IO_output_latch        ; Write the new set bits and the kept bits out to the lamp hardware
+7968  8588    sta LAMPZP                 ; Store this last written value in the cache
+796a  60      rts                        ; And we're done!
 ```
