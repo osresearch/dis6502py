@@ -466,21 +466,22 @@ class Annotator:
 		width = 1024
 		height = 1024
 		scale = 11
+		ix = 0
+		iy = None
 
-		if len(words) > 1:
-			length = int(words[1], 0) * 2
-		if len(words) > 2:
-			width = int(words[2], 0)
-		if len(words) > 3:
-			height = int(words[3], 0)
-		if len(words) > 4:
-			scale = int(words[4], 0)
+		if len(words) > 1: length = int(words[1], 0) * 2
+		if len(words) > 2: width = int(words[2], 0)
+		if len(words) > 3: height = int(words[3], 0)
+		if len(words) > 4: scale = int(words[4], 0)
+		if len(words) > 5: ix = int(words[5], 0)
+		if len(words) > 6: iy = int(words[6], 0)
+
 		cmd = self.dis.ram[addr:addr+length]
 
 		dvg = DVG(self.dvg_rom, width=width, height=height)
 		dvg.s = scale
-		dvg.x = 0
-		dvg.y = height - 2
+		dvg.x = ix if ix is not None else height - 2
+		dvg.y = iy
 		print("DVG %04x+%04x" % (addr, length), file=sys.stderr)
 		print(dvg.process(cmd))
 
